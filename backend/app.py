@@ -9,7 +9,7 @@ from psycopg2 import pool
 import os
 from dotenv import load_dotenv
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 import signal
 
@@ -79,6 +79,10 @@ def release_connection(conn):
     """Release connection back to pool"""
     if connection_pool and conn:
         connection_pool.putconn(conn)
+
+def get_utc_now():
+    """Get current UTC time (timezone-aware)"""
+    return datetime.now(timezone.utc)
 
 @app.route('/', methods=['GET'])
 def root():
@@ -411,15 +415,16 @@ def get_contest_status():
         
         # Calculate remaining time based on status (NO UPDATES - just calculation)
         remaining_time = 0
+        now = get_utc_now()
         
         if contest_dict['status'] == 'pending' and contest_dict['start_time']:
             # Pre-contest: Show countdown until contest starts
-            remaining = (contest_dict['start_time'] - datetime.now()).total_seconds()
+            remaining = (contest_dict['start_time'] - now).total_seconds()
             remaining_time = max(0, int(remaining))
                 
         elif contest_dict['status'] == 'running' and contest_dict['end_time']:
             # Contest running: Show countdown until end
-            remaining = (contest_dict['end_time'] - datetime.now()).total_seconds()
+            remaining = (contest_dict['end_time'] - now).total_seconds()
             remaining_time = max(0, int(remaining))
         
         return jsonify({
@@ -459,7 +464,7 @@ def get_last_update():
                 'status': 'no_contest'
             })
         
-        now = datetime.now()
+        now = get_utc_now()
         timestamp = int(result['timestamp']) if result['timestamp'] else 0
         current_status = result['status']
         
@@ -519,7 +524,7 @@ def admin_schedule_contest():
     
     try:
         cursor = conn.cursor()
-        now = datetime.now()
+        now = get_utc_now()
         
         # Calculate times
         # Contest will start after countdown_minutes
@@ -566,7 +571,7 @@ def admin_start_contest():
     
     try:
         cursor = conn.cursor()
-        now = datetime.now()
+        now = get_utc_now()
         end_time = now + timedelta(minutes=duration_minutes)
         
         # Use INSERT ... ON CONFLICT to ensure row exists
