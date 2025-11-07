@@ -110,6 +110,72 @@ function showAdminPanel() {
     document.getElementById('adminPanel').style.display = 'block';
     // Load contest status when admin panel is shown
     loadContestStatus();
+    
+    // Set up JSON file upload handler
+    const jsonFileInput = document.getElementById('jsonFileUpload');
+    if (jsonFileInput) {
+        jsonFileInput.addEventListener('change', handleJsonFileUpload);
+    }
+}
+
+// Handle JSON file upload
+function handleJsonFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    if (!file.name.endsWith('.json')) {
+        showMessage('error', 'Please select a valid JSON file', 'message');
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const problemData = JSON.parse(e.target.result);
+            populateFormFromJson(problemData);
+            showMessage('success', 'Problem data loaded from JSON!', 'message');
+        } catch (error) {
+            showMessage('error', 'Invalid JSON file: ' + error.message, 'message');
+        }
+    };
+    reader.readAsText(file);
+}
+
+// Populate form fields from JSON data
+function populateFormFromJson(data) {
+    // Map JSON fields to form fields
+    if (data.id) document.getElementById('problemId').value = data.id;
+    if (data.title) document.getElementById('problemTitle').value = data.title;
+    if (data.origin) document.getElementById('problemOrigin').value = data.origin;
+    if (data.timeLimit) document.getElementById('problemTimeLimit').value = data.timeLimit;
+    if (data.memoryLimit) document.getElementById('problemMemoryLimit').value = data.memoryLimit;
+    if (data.statement) document.getElementById('problemStatement').value = data.statement;
+    if (data.input) document.getElementById('problemInput').value = data.input;
+    if (data.output) document.getElementById('problemOutput').value = data.output;
+    if (data.constraints) document.getElementById('problemConstraints').value = data.constraints;
+    if (data.note) document.getElementById('problemNote').value = data.note;
+    if (data.vj_link || data.vjLink) document.getElementById('problemVjLink').value = data.vj_link || data.vjLink;
+    
+    // Clear existing samples and add new ones from JSON
+    document.getElementById('samplesContainer').innerHTML = '';
+    sampleCount = 0;
+    
+    if (data.samples && Array.isArray(data.samples)) {
+        data.samples.forEach(sample => {
+            addSampleInput();
+            const lastSampleId = sampleCount - 1;
+            const inputTextarea = document.querySelector(`#sample-${lastSampleId} .sample-input-text`);
+            const outputTextarea = document.querySelector(`#sample-${lastSampleId} .sample-output-text`);
+            
+            if (inputTextarea) inputTextarea.value = sample.input || '';
+            if (outputTextarea) outputTextarea.value = sample.output || '';
+        });
+    } else {
+        addSampleInput(); // Add at least one empty sample
+    }
+    
+    // Scroll to top of form
+    document.querySelector('.form-section').scrollIntoView({ behavior: 'smooth' });
 }
 
 // Switch between tabs
