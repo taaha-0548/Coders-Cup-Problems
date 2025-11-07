@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('passwordModal').classList.add('hidden');
     
     // Show loading spinner immediately
-    showLoading('Loading problems...');
+    showLoading('Loading contest...');
     
     initializeTabClicks();  // Add click handlers to tab links
     initializeAnimations();
@@ -151,7 +151,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize contest status and timer FIRST (before showing any tab content)
     initializeContestStatus().then(() => {
         // Now initialize navigation (which may show problems tab)
-        // This will call showProblems() which will handle hiding the spinner
+        // This will call showProblems() which will handle loading and displaying problems
         initializeNavigation();
     }).catch(() => {
         // Even if contest status fails, show navigation
@@ -159,8 +159,10 @@ document.addEventListener('DOMContentLoaded', function() {
         hideLoading();
     });
     
-    // Load all problems once and cache them permanently
-    loadProblems();
+    // Set a timeout to ensure spinner is hidden after 10 seconds (failsafe)
+    setTimeout(() => {
+        hideLoading();
+    }, 10000);
     
     // Define reusable storage event handler
     window.handleStorageEvent = function(e) {
@@ -222,7 +224,7 @@ function initializeTabClicks() {
     });
 }
 
-// Update navigation logic to fetch fresh data on tab change
+// Initialize navigation and handle URL parameters
 function initializeNavigation() {
     const urlParams = new URLSearchParams(window.location.search);
     const activeTab = urlParams.get('tab') || 'instructions';
@@ -235,35 +237,11 @@ function initializeNavigation() {
         showInstructions();
         setActiveTab('instructions');
     } else {
-        // Fetch fresh data when switching to the problems tab
-        loadProblems().then(() => {
-            displayProblems();
-        });
+        // Call showProblems() first to create the DOM structure
+        showProblems();
         setActiveTab('problems');
     }
 }
-
-// Fetch fresh data on page load
-window.addEventListener('DOMContentLoaded', () => {
-    loadProblems().then(() => {
-        displayProblems();
-    });
-});
-
-// Fetch fresh data on problem navigation
-function handleProblemNavigation() {
-    const problemLinks = document.querySelectorAll('.problem-title');
-    problemLinks.forEach(link => {
-        link.addEventListener('click', () => {
-            loadProblems().then(() => {
-                displayProblems();
-            });
-        });
-    });
-}
-
-// Call the navigation handler after the DOM is ready
-window.addEventListener('DOMContentLoaded', handleProblemNavigation);
 
 // Set active tab visual state
 function setActiveTab(tabName) {
@@ -302,30 +280,19 @@ function initializeAnimations() {
 // Load all problems from API
 async function loadProblems() {
     try {
-        // Check if already cached
-        const cachedProblems = localStorage.getItem('cachedProblems');
-        if (cachedProblems) {
-            allProblems = JSON.parse(cachedProblems);
-            console.log('✓ Loaded all problems from cache');
-            return;
-        }
-        
-        // First time: fetch from API
+        // Always fetch fresh data from API (no caching)
         const response = await fetch(`${API_URL}/problems`);
         if (!response.ok) {
             throw new Error(`API returned status ${response.status}`);
         }
-        
+
         allProblems = await response.json();
-        
-        // Cache permanently
-        localStorage.setItem('cachedProblems', JSON.stringify(allProblems));
-        
-        console.log(`✓ Loaded ${allProblems.length} problems from API and cached`);
-        
+        console.log(`✓ Loaded ${allProblems.length} problems from API`);
+        displayProblems(); // Ensure DOM updates
     } catch (error) {
         console.error('Error loading problems:', error);
         showError('Failed to load problems. Make sure the backend server is running at ' + API_URL);
+        hideLoading(); // Ensure spinner is hidden
     }
 }
 
@@ -378,7 +345,10 @@ function getPointsForProblem(problemId) {
 
 // Open problem page
 function openProblem(problemId) {
-    window.location.href = `problem.html?id=${problemId}`;
+    // Reload problems before navigating
+    loadProblems().then(() => {
+        window.location.href = `problem.html?id=${problemId}`;
+    });
 }
 
 // Show/hide loading spinner
@@ -514,7 +484,7 @@ function showProblems() {
     // Immediately show loading state to provide instant feedback
     container.innerHTML = `
         <div style="text-align: center; padding: 60px 20px;">
-            <p style="font-size: 18px; color: #666;">Loading contest information...</p>
+            <p style="font-size: 18px; color: #666;">Loading problems...</p>
             <div style="margin-top: 20px; display: inline-block;">
                 <div style="border: 4px solid #f3f3f3; border-top: 4px solid #e74c3c; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;"></div>
             </div>
@@ -527,15 +497,28 @@ function showProblems() {
         </div>
     `;
     
-    // Hide the main loading overlay IMMEDIATELY
-    hideLoading();
-    
-    // Use existing contest status (no need to fetch again)
-    if (lastContestStatus) {
-        displayProblemsBasedOnStatus(lastContestStatus);
+    // Load problems ONLY ONCE
+    if (allProblems.length === 0) {
+        // Problems not yet loaded, fetch them
+        loadProblems().then(() => {
+            hideLoading(); // Hide main overlay after problems are loaded
+            // After loading, check contest status and display accordingly
+            if (lastContestStatus) {
+                displayProblemsBasedOnStatus(lastContestStatus);
+            } else {
+                checkContestStatusAndDisplay();
+            }
+        }).catch(() => {
+            hideLoading(); // Hide main overlay even if there's an error
+        });
     } else {
-        // If no cached status yet, fetch it once
-        checkContestStatusAndDisplay();
+        // Problems already loaded, just display them
+        hideLoading();
+        if (lastContestStatus) {
+            displayProblemsBasedOnStatus(lastContestStatus);
+        } else {
+            checkContestStatusAndDisplay();
+        }
     }
 }
 
@@ -548,15 +531,11 @@ async function checkContestStatusAndDisplay() {
         displayProblemsBasedOnStatus(contest);
     } catch (error) {
         console.error('Error checking contest status:', error);
-        // If error, just show problems normally
+        // If error, just display problems normally without contest status
         displayProblemsTable();
-        // Load problems with small delay to ensure DOM is ready
-        await new Promise(resolve => setTimeout(resolve, 10));
-        if (allProblems.length === 0) {
-            loadProblems();
-        } else {
-            displayProblems();
-        }
+        // Problems should already be loaded at this point
+        displayProblems();
+        hideLoading(); // Ensure spinner is hidden after error
     }
 }
 
@@ -569,38 +548,29 @@ function displayProblemsBasedOnStatus(contest) {
             // Pre-contest: ONLY show countdown, NO problems
             displayPreContestCountdown(contest);
             startPhaseCheckTimer();  // Start checking for transition to running
+            hideLoading();
         } else if (contest.status === 'running') {
             // Contest is running: Show problems + remaining time
             displayProblemsTable();
             // Show timer on page
             updateContestTimerOnPage(contest);
-            // Load problems with small delay to ensure DOM is ready
-            // (innerHTML completes synchronously but rendering may be async)
-            setTimeout(() => {
-                if (allProblems.length === 0) {
-                    loadProblems();
-                } else {
-                    displayProblems();
-                }
-            }, 10);
+            // Display the already-loaded problems
+            displayProblems();
+            hideLoading();
             startPhaseCheckTimer();  // Start checking for transition to ended
         } else if (contest.status === 'ended') {
             // Contest ended: ONLY show message, NO problems
             displayContestEnded();
             stopPhaseCheckTimer();  // Stop checking, contest is over
+            hideLoading();
         }
     } else {
         // Timer not visible to participants - show problems only if running
         if (contest.status === 'running') {
             displayProblemsTable();
-            // Load problems with small delay to ensure DOM is ready
-            setTimeout(() => {
-                if (allProblems.length === 0) {
-                    loadProblems();
-                } else {
-                    displayProblems();
-                }
-            }, 10);
+            // Display the already-loaded problems
+            displayProblems();
+            hideLoading();
         } else if (contest.status === 'pending') {
             // Contest hasn't started yet, show nothing
             const container = document.querySelector('#main-container');
@@ -609,9 +579,11 @@ function displayProblemsBasedOnStatus(contest) {
                     <p style="font-size: 18px; color: #666;">Contest has not started yet.</p>
                 </div>
             `;
+            hideLoading();
         } else if (contest.status === 'ended') {
             // Contest ended, show message
             displayContestEnded();
+            hideLoading();
         }
     }
 }
