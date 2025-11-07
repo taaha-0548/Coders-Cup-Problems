@@ -243,6 +243,37 @@ def test_connection():
             'message': f'Connection failed: {str(e)}'
         }), 500
 
+@app.route('/api/validate-password', methods=['POST'])
+def validate_password():
+    """Validate contest password - needed to access the platform"""
+    data = request.json
+    password = data.get('password', '')
+    
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'error': 'Database connection failed'}), 500
+    
+    try:
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        
+        # Get contest password from database
+        cursor.execute("SELECT password FROM contest_password WHERE id = 1")
+        result = cursor.fetchone()
+        cursor.close()
+        
+        if not result or not result['password']:
+            return jsonify({'error': 'Contest password not configured'}), 400
+        
+        if password == result['password']:
+            return jsonify({'status': 'success', 'message': 'Password correct'})
+        else:
+            return jsonify({'error': 'Invalid password'}), 401
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        release_connection(conn)
+
 # ==================== ADMIN ENDPOINTS ====================
 
 @app.route('/api/admin/problems', methods=['POST'])

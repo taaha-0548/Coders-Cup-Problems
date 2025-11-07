@@ -1188,3 +1188,144 @@ body {
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
+
+/* Password Modal Styles */
+.password-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    backdrop-filter: blur(4px);
+}
+
+.password-modal-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+.password-modal-card {
+    background: white;
+    border-radius: 16px;
+    padding: 40px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    max-width: 400px;
+    width: 90%;
+    animation: slideInScale 0.4s ease-out;
+}
+
+.password-modal-card h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--color-primaryblue);
+    margin-bottom: 10px;
+    font-family: var(--font-montserrat);
+}
+
+.password-modal-card p {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 20px;
+    font-family: var(--font-sans);
+}
+
+#passwordForm {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.password-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    overflow: hidden;
+}
+
+#passwordInput {
+    padding: 12px 40px 12px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 16px;
+    font-family: var(--font-cascadia);
+    transition: all 0.3s ease;
+    background: #f9f9f9;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#passwordInput:focus {
+    outline: none;
+    border-color: var(--color-accent-red);
+    background: white;
+    box-shadow: 0 0 0 3px rgba(220, 20, 60, 0.1);
+}
+
+.password-toggle-btn {
+    position: absolute;
+    right: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    transition: color 0.2s ease;
+    pointer-events: auto;
+    z-index: 10;
+}
+
+.password-toggle-btn:hover {
+    color: #666;
+}
+
+.eye-icon {
+    width: 18px;
+    height: 18px;
+    display: block;
+    pointer-events: none;
+}
+
+#passwordForm button[type="submit"] {
+    padding: 12px 20px;
+    background: linear-gradient(135deg, var(--color-accent-red) 0%, #c0392b 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    font-family: var(--font-sans);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#passwordForm button[type="submit"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(220, 20, 60, 0.3);
+}
+
+#passwordForm button[type="submit"]:active {
+    transform: translateY(0);
+}
+
+.password-error {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.password-modal.hidden {
+    display: none;
+}

@@ -13,6 +13,35 @@
     <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&family=Cascadia+Code:wght@200..700&family=Montserrat:wght@100..900&display=swap" rel="stylesheet">
 </head>
 <body class="antialiased min-h-screen bg-white font-cascadia">
+    <!-- Password Modal -->
+    <div id="passwordModal" class="password-modal">
+        <div class="password-modal-content">
+            <div class="password-modal-card">
+                <h2>Enter Contest Password</h2>
+                <p>Please enter the password to access the contest</p>
+                <form id="passwordForm" onsubmit="handlePasswordSubmit(event)">
+                    <div class="password-input-wrapper">
+                        <input 
+                            type="password" 
+                            id="passwordInput" 
+                            placeholder="Enter password" 
+                            autocomplete="off"
+                            required
+                        >
+                        <button type="button" class="password-toggle-btn" id="passwordToggle" onclick="togglePasswordVisibility()">
+                            <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </button>
+                    </div>
+                    <button type="submit">Access Contest</button>
+                </form>
+                <div id="passwordError" class="password-error" style="display: none; color: #e74c3c; margin-top: 10px; text-align: center;"></div>
+            </div>
+        </div>
+    </div>
+
     <div class="contest-header">
         <div class="container">
             <div class="contest-info">

@@ -1,3 +1,83 @@
+// ==================== PASSWORD AUTHENTICATION ====================
+// Check if user has already authenticated (stored in sessionStorage)
+const API_URL = window.location.origin + '/api';
+
+function isUserAuthenticated() {
+    return sessionStorage.getItem('contestPasswordValid') === 'true';
+}
+
+function setUserAuthenticated() {
+    sessionStorage.setItem('contestPasswordValid', 'true');
+}
+
+async function handlePasswordSubmit(event) {
+    event.preventDefault();
+    
+    const password = document.getElementById('passwordInput').value;
+    const errorDiv = document.getElementById('passwordError');
+    const submitButton = event.target.querySelector('button[type="submit"]');
+    
+    try {
+        submitButton.disabled = true;
+        submitButton.textContent = 'Verifying...';
+        
+        const response = await fetch(`${API_URL}/validate-password`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ password })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            console.log('✓ Password correct, setting authenticated state');
+            setUserAuthenticated();
+            document.getElementById('passwordModal').classList.add('hidden');
+            hideLoading(); // Make sure loading is hidden
+            // Reload to show main content
+            location.reload();
+        } else {
+            errorDiv.textContent = data.error || 'Invalid password';
+            errorDiv.style.display = 'block';
+            document.getElementById('passwordInput').value = '';
+        }
+    } catch (error) {
+        console.error('Password validation error:', error);
+        errorDiv.textContent = 'Error: ' + error.message;
+        errorDiv.style.display = 'block';
+    } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = 'Access Contest';
+    }
+}
+
+function togglePasswordVisibility() {
+    const passwordInput = document.getElementById('passwordInput');
+    const toggleBtn = document.getElementById('passwordToggle');
+    
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        // Change icon to closed eye (hide password)
+        toggleBtn.innerHTML = `
+            <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                <line x1="1" y1="1" x2="23" y2="23"></line>
+            </svg>
+        `;
+    } else {
+        passwordInput.type = 'password';
+        // Change icon back to open eye (show password)
+        toggleBtn.innerHTML = `
+            <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+        `;
+    }
+}
+
 // Global variables
 let allProblems = [];
 
@@ -11,7 +91,7 @@ let lastUpdateCheck = 0;  // Track last-update timestamp for smart polling
 let updateCheckInterval = null;  // Poll for updates every 5 seconds
 
 // API URL - dynamically set based on current domain
-const API_URL = window.location.origin + '/api';
+// (Already defined above in password section)
 
 // Broadcast contest state changes to other tabs/windows
 function broadcastContestStateChange(action, source = 'index-page') {
@@ -50,6 +130,18 @@ function hideLoading() {
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
+    // Check password authentication first
+    if (!isUserAuthenticated()) {
+        // Hide loading overlay and show password modal
+        hideLoading();
+        document.getElementById('passwordModal').classList.remove('hidden');
+        document.getElementById('passwordInput').focus();
+        return; // Stop further initialization
+    }
+    
+    // Hide password modal if somehow still visible
+    document.getElementById('passwordModal').classList.add('hidden');
+    
     // Show loading spinner immediately
     showLoading('Loading problems...');
     
@@ -61,6 +153,10 @@ document.addEventListener('DOMContentLoaded', function() {
         // Now initialize navigation (which may show problems tab)
         // This will call showProblems() which will handle hiding the spinner
         initializeNavigation();
+    }).catch(() => {
+        // Even if contest status fails, show navigation
+        initializeNavigation();
+        hideLoading();
     });
     
     // Load all problems once and cache them permanently
@@ -406,16 +502,15 @@ function showProblems() {
         </div>
     `;
     
+    // Hide the main loading overlay IMMEDIATELY
+    hideLoading();
+    
     // Use existing contest status (no need to fetch again)
     if (lastContestStatus) {
         displayProblemsBasedOnStatus(lastContestStatus);
-        // Hide main loading overlay after content is rendered
-        setTimeout(() => hideLoading(), 50);
     } else {
         // If no cached status yet, fetch it once
         checkContestStatusAndDisplay();
-        // Hide main loading overlay after content is rendered
-        setTimeout(() => hideLoading(), 50);
     }
 }
 
