@@ -222,23 +222,48 @@ function initializeTabClicks() {
     });
 }
 
-// Initialize navigation and handle URL parameters
+// Update navigation logic to fetch fresh data on tab change
 function initializeNavigation() {
     const urlParams = new URLSearchParams(window.location.search);
     const activeTab = urlParams.get('tab') || 'instructions';
-    
+
     // Track current tab
     setCurrentTab(activeTab);
-    
+
     // Set initial tab state
     if (activeTab === 'instructions') {
         showInstructions();
         setActiveTab('instructions');
     } else {
-        showProblems();
+        // Fetch fresh data when switching to the problems tab
+        loadProblems().then(() => {
+            displayProblems();
+        });
         setActiveTab('problems');
     }
 }
+
+// Fetch fresh data on page load
+window.addEventListener('DOMContentLoaded', () => {
+    loadProblems().then(() => {
+        displayProblems();
+    });
+});
+
+// Fetch fresh data on problem navigation
+function handleProblemNavigation() {
+    const problemLinks = document.querySelectorAll('.problem-title');
+    problemLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            loadProblems().then(() => {
+                displayProblems();
+            });
+        });
+    });
+}
+
+// Call the navigation handler after the DOM is ready
+window.addEventListener('DOMContentLoaded', handleProblemNavigation);
 
 // Set active tab visual state
 function setActiveTab(tabName) {

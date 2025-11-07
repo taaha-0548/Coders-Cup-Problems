@@ -1,22 +1,18 @@
 {
   "id": "B",
-  "title": "Matrix Power Grid",
-  "origin": "CodeForces 747B",
-  "timeLimit": "2000ms",
-  "memoryLimit": "512MB",
-  "statement": "Dr. Wells needs to analyze a power grid represented as an N×M matrix. Each cell contains a power level. Find the maximum power that can be collected by moving from the top-left corner to the bottom-right corner, where you can only move right or down.",
-  "input": "The first line contains two integers N and M (1 ≤ N, M ≤ 100). The next N lines each contain M integers representing the power levels in the grid (1 ≤ power ≤ 100).",
-  "output": "Print the maximum power that can be collected.",
-  "constraints": "1 ≤ N, M ≤ 100<br>1 ≤ power ≤ 100",
+  "title": "Array Product",
+  "origin": "CodeForces 1490B",
+
+  "statement": "Given an array <code>a</code> of <code>n</code> elements, where each element is equal to <code>-1</code>, <code>0</code>, or <code>1</code>. In one operation, you can choose an index <code>i</code> and increase <code>a_i</code> by <code>1</code> (that is, assign <code>a_i := a_i + 1</code>). Operations can be performed any number of times, choosing any indices.<br><br>The goal is to make the product of all elements in the array strictly positive with the minimum number of operations, that is, <code>a_1 \u22C5 a_2 \u22C5 a_3 \u22C5 \u22C5 \u22C5 a_n > 0</code>. Find the minimum number of operations.<br><br>It is guaranteed that this is always possible.",
+  "input": "Each test consists of several test cases.<br><br>The first line contains one integer <code>t</code> (<code>1 \u2264 t \u2264 10^4</code>) — the number of test cases. The description of the test cases follows.<br><br>The first line of each test case contains one integer <code>n</code> (<code>1 \u2264 n \u2264 8</code>) — the length of the array <code>a</code>.<br><br>The second line contains <code>n</code> integers <code>a_1, a_2, \u2026, a_n</code>, where <code>-1 \u2264 a_i \u2264 1</code> — the elements of the array <code>a</code>.",
+  "output": "For each test case, output one integer — the minimum number of operations required to make the product of the elements in the array strictly positive.",
+  "constraints": "<code>1 \u2264 t \u2264 10^4</code><br><code>1 \u2264 n \u2264 8</code><br><code>-1 \u2264 a_i \u2264 1</code>",
   "samples": [
     {
-      "input": "3 3\n1 2 3\n4 5 6\n7 8 9",
-      "output": "29"
-    },
-    {
-      "input": "2 4\n1 3 1 5\n2 1 4 9",
-      "output": "18"
+      "input": "3\n3\n-1 0 1\n4\n-1 -1 0 1\n5\n-1 -1 -1 0 0",
+      "output": "3\n1\n4"
     }
   ],
-  "vj_link": "https://vjudge.net/problem/CodeForces-747B"
+  "note": "In the first test case: from <code>[-1, 0, 1]</code>, you can obtain <code>[1, 1, 1]</code> in <code>3</code> operations.<br><br>In the second test case: it is enough to perform <code>0 \u2192 1</code> (1 operation). In the resulting array <code>a=[-1,-1,1,1]</code>, the product of all elements is <code>1</code>.<br><br>In the third test case: turning two zeros into ones (2 operations), and one <code>-1</code> into <code>1</code> (another 2 operations), for a total of <code>4</code>.",
+  "vj_link": "https://vjudge.net/contest/764687#problem/B"
 }

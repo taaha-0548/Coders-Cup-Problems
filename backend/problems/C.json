@@ -1,22 +1,17 @@
 {
   "id": "C",
-  "title": "Speed Force Calculations",
-  "origin": "CodeForces 299A",
-  "timeLimit": "3000ms",
-  "memoryLimit": "1024MB",
-  "statement": "Barry Allen needs to calculate the optimal route through the multiverse. Given a graph with N nodes and M edges, find the shortest path from node 1 to node N. However, Barry can use his speed force to teleport once, instantly moving to any node he hasn't visited yet.",
-  "input": "The first line contains two integers N and M (2 ≤ N ≤ 1000, 1 ≤ M ≤ 5000). The next M lines each contain three integers u, v, and w, representing an edge from node u to node v with weight w (1 ≤ u, v ≤ N, 1 ≤ w ≤ 1000).",
-  "output": "Print the minimum distance from node 1 to node N, considering the speed force teleportation ability.",
-  "constraints": "2 ≤ N ≤ 1000<br>1 ≤ M ≤ 5000<br>1 ≤ u, v ≤ N<br>1 ≤ w ≤ 1000",
+  "title": "Parity Subtraction",
+  "origin": "CodeForces 1451A",
+  "statement": "You are given two integers <code>n</code> and <code>k</code>; <code>k</code> is an odd number not less than <code>3</code>. Your task is to turn <code>n</code> into <code>0</code>.<br><br>To do this, you can perform the following operation any number of times: choose a number <code>x</code> from <code>1</code> to <code>k</code> and subtract it from <code>n</code>. However, if the current value of <code>n</code> is even (divisible by <code>2</code>), then <code>x</code> must also be even, and if the current value of <code>n</code> is odd (not divisible by <code>2</code>), then <code>x</code> must be odd.<br><br>In different operations, you can choose the same values of <code>x</code>, but you don't have to. So, there are no limitations on using the same value of <code>x</code>.<br><br>Calculate the minimum number of operations required to turn <code>n</code> into <code>0</code>.",
+  "input": "The first line contains one integer <code>t</code> (<code>1 \u2264 t \u2264 10000</code>) \\u2014 the number of test cases.<br><br>Each test case consists of one line containing two integers <code>n</code> and <code>k</code> (<code>3 \u2264 k \u2264 n \u2264 10^9</code>, <code>k</code> is odd).",
+  "output": "For each test case, output one integer \\u2014 the minimum number of operations required to turn <code>n</code> into <code>0</code>.",
+  "constraints": "<code>1 \u2264 t \u2264 10000</code><br><code>3 \u2264 k \u2264 n \u2264 10^9</code><br><code>k</code> is odd",
   "samples": [
     {
-      "input": "4 4\n1 2 10\n2 3 10\n3 4 10\n1 4 25",
-      "output": "25"
-    },
-    {
-      "input": "5 6\n1 2 5\n2 3 5\n3 4 5\n4 5 5\n1 3 12\n3 5 8",
-      "output": "13"
+      "input": "8\n39 7\n9 3\n6 3\n999967802 3\n5 5\n6 5\n999999999 3\n1000000000 3",
+      "output": "7\n4\n3\n499983901\n1\n2\n499999999\n500000000"
     }
   ],
-  "vj_link": "https://vjudge.net/problem/CodeForces-299A"
+  "note": "In the first example, you can first subtract <code>5</code> from <code>39</code> to get <code>34</code>. Then subtract <code>6</code> five times to get <code>4</code>. Finally, subtract <code>4</code> to get <code>0</code>.<br><br>In the second example, you can subtract <code>3</code> once, and then subtract <code>2</code> three times.<br><br>In the third example, you can subtract <code>2</code> three times.",
+  "vj_link": "https://vjudge.net/contest/764687#problem/C"
 }

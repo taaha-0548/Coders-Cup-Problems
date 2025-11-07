@@ -1,26 +1,18 @@
 {
   "id": "D",
-  "title": "Cisco's Data Structures",
-  "origin": "CodeForces 1454C",
-  "timeLimit": "2500ms",
-  "memoryLimit": "768MB",
-  "statement": "Cisco Ramon is organizing interdimensional data. He has an array of N integers and needs to find the longest subsequence where each element is greater than the previous one. Help him find the length of the longest increasing subsequence.",
-  "input": "The first line contains an integer N (1 ≤ N ≤ 1000). The second line contains N integers a₁, a₂, ..., aₙ (1 ≤ aᵢ ≤ 10⁹).",
-  "output": "Print the length of the longest increasing subsequence.",
-  "constraints": "1 ≤ N ≤ 1000<br>1 ≤ aᵢ ≤ 10⁹",
+  "title": "Closest Point Addition",
+  "origin": "Custom Problem",
+  "timeLimit": "2000ms",
+  "memoryLimit": "512MB",
+  "statement": "<p>Consider a set of points on a line. The distance between two points <code>i</code> and <code>j</code> is <code>|i - j|</code>.</p><p>The point <code>i</code> from the set is <span class=\"tex-font-style-bf\">the closest</span> to the point <code>j</code> from the set, if there is no other point <code>k</code> in the set such that the distance from <code>j</code> to <code>k</code> is <span class=\"tex-font-style-bf\">strictly less</span> than the distance from <code>j</code> to <code>i</code>. In other words, all other points from the set have distance to <code>j</code> greater or equal to <code>|i - j|</code>.</p><p>For example, consider a set of points <code>{1, 3, 5, 8}</code>:</p><ul> <li> for the point <code>1</code>, the closest point is <code>3</code> (other points have distance greater than <code>|1-3| = 2</code>); </li><li> for the point <code>3</code>, there are two closest points: <code>1</code> and <code>5</code>; </li><li> for the point <code>5</code>, the closest point is <code>3</code> (but not <code>8</code>, since its distance is greater than <code>|3-5|</code>); </li><li> for the point <code>8</code>, the closest point is <code>5</code>. </li></ul><p>You are given a set of points. You have to add an <span class=\"tex-font-style-bf\">integer</span> point into this set in such a way that <span class=\"tex-font-style-bf\">it is different from every existing point in the set</span>, and <span class=\"tex-font-style-bf\">it becomes the closest point to every point in the set</span>. Is it possible?</p>",
+  "input": "<p>The first line contains one integer <code>t</code> (<code>1 \u2264 t \u2264 1000</code>) — the number of test cases.</p><p>Each test case consists of two lines:</p><ul> <li> the first line contains one integer <code>n</code> (<code>2 \u2264 n \u2264 40</code>) — the number of points in the set; </li><li> the second line contains <code>n</code> integers <code>x_1, x_2, \u2026, x_n</code> (<code>1 \u2264 x_1 &lt; x_2 &lt; \u2026 &lt; x_n \u2264 100</code>) — the points from the set. </li></ul>",
+  "output": "<p>For each test case, print <span class=\"tex-font-style-tt\">YES</span> if it is possible to add a new point according to the conditions from the statement. Otherwise, print <span class=\"tex-font-style-tt\">NO</span>.</p>",
+  "constraints": "<p>2 \u2264 n \u2264 40</p><p>1 \u2264 x_1 &lt; x_2 &lt; \u2026 &lt; x_n \u2264 100</p>",
   "samples": [
     {
-      "input": "6\n1 3 2 4 5 3",
-      "output": "4"
-    },
-    {
-      "input": "8\n10 9 8 7 6 5 4 3",
-      "output": "1"
-    },
-    {
-      "input": "5\n1 2 3 4 5",
-      "output": "5"
+      "input": "3\n2\n3 8\n2\n5 6\n6\n1 2 3 4 5 10",
+      "output": "YES\nNO\nNO"
     }
   ],
-  "vj_link": "https://vjudge.net/problem/CodeForces-1454C"
+  "vj_link": "https://vjudge.net/contest/764687#problem/D"
 }
