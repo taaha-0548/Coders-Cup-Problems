@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Admin Panel - Coder's Cup</title>
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+    <link rel="shortcut icon" href="assets/favicon.ico">
+    <link rel="stylesheet" href="css/theme.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&family=Cascadia+Code:wght@200..700&family=Montserrat:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .login-form {
+            max-width: 400px;
+            margin: 100px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            border: 2px solid #DC143C;
+            box-shadow: 0 4px 15px rgba(220, 20, 60, 0.2);
+            text-align: center;
+        }
+
+        .login-form h2 {
+            color: #1a1a2e;
+            margin-bottom: 30px;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn-login {
+            width: 100%;
+            background: #DC143C;
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-login:hover {
+            background: #FF4444;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 20, 60, 0.3);
+        }
+
+        .admin-panel {
+            display: none;
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #DC143C;
+            padding-bottom: 15px;
+        }
+
+        .admin-header h2 {
+            color: #1a1a2e;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .btn-logout {
+            background: #e74c3c;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-logout:hover {
+            background: #c0392b;
+        }
+
+        .admin-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .admin-tab {
+            padding: 12px 24px;
+            background: #f8f9fa;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s ease;
+        }
+
+        .admin-tab.active {
+            background: #DC143C;
+            color: white;
+        }
+
+        .admin-tab:hover {
+            background: #ecf0f1;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-section {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            border: 2px solid #DC143C;
+            margin-bottom: 30px;
+        }
+
+        .form-section h3 {
+            color: #1a1a2e;
+            margin-bottom: 20px;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-row.full {
+            grid-template-columns: 1fr;
+        }
+
+        .btn-submit {
+            background: #27ae60;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+
+        .btn-submit:hover {
+            background: #229954;
+        }
+
+        .btn-reset {
+            background: #95a5a6;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-reset:hover {
+            background: #7f8c8d;
+        }
+
+        .problems-list {
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #DC143C;
+            overflow: hidden;
+        }
+
+        .problems-list table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .problems-list th {
+            background: linear-gradient(135deg, #1a1a2e, #2a2a3e);
+            color: #FF4444;
+            padding: 16px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .problems-list td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .problems-list tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .btn-edit {
+            background: #3498db;
+            color: white;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+
+        .btn-delete {
+            background: #e74c3c;
+            color: white;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .btn-delete:hover {
+            background: #c0392b;
+        }
+
+        .message {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+            border: 1px solid #f5c6cb;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .sample-input {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            border: 1px solid #ecf0f1;
+        }
+
+        .btn-add-sample {
+            background: #3498db;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .btn-remove-sample {
+            background: #e74c3c;
+            color: white;
+            padding: 4px 8px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            float: right;
+        }
+
+        .contest-status-box {
+            background: #f8f9fa;
+            border: 2px solid #e74c3c;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .status-item label {
+            font-weight: 600;
+            color: #1a1a2e;
+            min-width: 150px;
+        }
+
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .status-badge.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-badge.running {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-badge.ended {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .time-display {
+            font-family: 'Courier New', monospace;
+            font-size: 32px;
+            font-weight: bold;
+            color: #e74c3c;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen bg-white font-cascadia">
+    <div class="contest-header">
+        <div class="container">
+            <div class="contest-info">
+                <div class="contest-title">
+                    <img src="assets/acm-logo.png" alt="ACM Logo" class="contest-logo">
+                    <h1>Coder's Cup - Admin Panel</h1>
+                </div>
+                <div class="contest-meta">
+                    <span class="contest-time">Manage Problems & Content</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Form -->
+    <div class="login-form" id="loginForm">
+        <h2>Admin Login</h2>
+        <div class="form-group">
+            <label for="adminPassword">Password</label>
+            <input type="password" id="adminPassword" placeholder="Enter admin password" autocomplete="off">
+        </div>
+        <button class="btn-login" onclick="loginAdmin()">Login</button>
+        <p style="margin-top: 15px; color: #666; font-size: 12px;">
+            <a href="index.html" style="color: #DC143C; text-decoration: none;">← Back to Main Site</a>
+        </p>
+    </div>
+
+    <!-- Admin Panel -->
+    <div class="admin-panel" id="adminPanel">
+        <div class="admin-container">
+            <div class="admin-header">
+                <h2>Admin Dashboard</h2>
+                <button class="btn-logout" onclick="logoutAdmin()">Logout</button>
+            </div>
+
+            <div class="admin-tabs">
+                <button class="admin-tab active" onclick="switchTab('add-problem', event)">Add Problem</button>
+                <button class="admin-tab" onclick="switchTab('manage-problems', event)">Manage Problems</button>
+                <button class="admin-tab" onclick="switchTab('contest-settings', event)">Contest Settings</button>
+            </div>
+
+            <!-- Add/Edit Problem Tab -->
+            <div id="add-problem" class="tab-content active">
+                <div class="form-section">
+                    <h3>Add / Edit Problem</h3>
+                    <div id="message" class="message"></div>
+
+                    <div class="form-row full">
+                        <div class="form-group">
+                            <label for="problemId">Problem ID (A, B, C, etc.)</label>
+                            <input type="text" id="problemId" maxlength="10" placeholder="e.g., A, B, C">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="problemTitle">Title</label>
+                            <input type="text" id="problemTitle" placeholder="Problem title">
+                        </div>
+                        <div class="form-group">
+                            <label for="problemOrigin">Origin</label>
+                            <input type="text" id="problemOrigin" placeholder="e.g., CodeForces 1234A">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="problemTimeLimit">Time Limit</label>
+                            <input type="text" id="problemTimeLimit" placeholder="e.g., 1000ms">
+                        </div>
+                        <div class="form-group">
+                            <label for="problemMemoryLimit">Memory Limit</label>
+                            <input type="text" id="problemMemoryLimit" placeholder="e.g., 256MB">
+                        </div>
+                    </div>
+
+                    <div class="form-row full">
+                        <div class="form-group">
+                            <label for="problemStatement">Problem Statement (HTML)</label>
+                            <textarea id="problemStatement" placeholder="Enter HTML problem statement"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-row full">
+                        <div class="form-group">
+                            <label for="problemInput">Input Description (HTML)</label>
+                            <textarea id="problemInput" placeholder="Enter HTML input description"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-row full">
+                        <div class="form-group">
+                            <label for="problemOutput">Output Description (HTML)</label>
+                            <textarea id="problemOutput" placeholder="Enter HTML output description"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-row full">
+                        <div class="form-group">
+                            <label for="problemConstraints">Constraints (HTML)</label>
+                            <textarea id="problemConstraints" placeholder="Enter HTML constraints"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-row full">
+                        <div class="form-group">
+                            <label for="problemNote">Note (HTML, Optional)</label>
+                            <textarea id="problemNote" placeholder="Enter HTML note (optional)"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-row full">
+                        <div class="form-group">
+                            <label for="problemVjLink">VJudge Link</label>
+                            <input type="url" id="problemVjLink" placeholder="https://vjudge.net/problem/...">
+                        </div>
+                    </div>
+
+                    <!-- Samples Section -->
+                    <div class="form-row full">
+                        <h4 style="color: #1a1a2e; margin-top: 20px; margin-bottom: 10px;">Samples</h4>
+                        <div id="samplesContainer"></div>
+                        <button class="btn-add-sample" onclick="addSampleInput()">+ Add Sample</button>
+                    </div>
+
+                    <div class="form-row" style="margin-top: 20px;">
+                        <button class="btn-submit" onclick="saveProblem()">Save Problem</button>
+                        <button class="btn-reset" onclick="resetForm()">Clear Form</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manage Problems Tab -->
+            <div id="manage-problems" class="tab-content">
+                <div class="form-section">
+                    <h3>All Problems</h3>
+                    <div id="managingMessage" class="message"></div>
+                    <div id="problemsTableContainer" class="loading">Loading problems...</div>
+                </div>
+            </div>
+
+            <!-- Contest Settings Tab -->
+            <div id="contest-settings" class="tab-content">
+                <div class="form-section">
+                    <h3>Contest Timer Control</h3>
+                    <div id="contestMessage" class="message"></div>
+
+                    <div class="contest-status-box">
+                        <div class="status-item">
+                            <label>Contest Status:</label>
+                            <span id="contestStatus" class="status-badge pending">Pending</span>
+                        </div>
+                        <div class="status-item">
+                            <label>Time Remaining:</label>
+                            <span id="timeRemaining" class="time-display">00:00:00</span>
+                        </div>
+                    </div>
+
+                    <!-- Pre-Contest Setup Section -->
+                    <div style="background: #f0f0f0; padding: 15px; border-radius: 8px; margin-top: 20px; margin-bottom: 20px;">
+                        <h4 style="color: #1a1a2e; margin-top: 0; margin-bottom: 15px;">📋 Pre-Contest Setup</h4>
+                        <p style="color: #666; font-size: 14px; margin-bottom: 15px;">Set when the contest should start and how long it will run</p>
+                        
+                        <div class="form-row">
+                            <div class="form-group" style="flex: 1;">
+                                <label for="preContestCountdown">Countdown Start (minutes from now)</label>
+                                <input type="number" id="preContestCountdown" min="1" max="1440" value="5" placeholder="5">
+                                <small style="color: #999;">Participants will see countdown starting in this many minutes</small>
+                            </div>
+                        </div>
+
+                        <div class="form-row" style="margin-top: 15px;">
+                            <div class="form-group" style="flex: 1;">
+                                <label for="contestDuration">Contest Duration (minutes)</label>
+                                <input type="number" id="contestDuration" min="1" value="120" placeholder="120">
+                                <small style="color: #999;">How long the contest will run after it starts</small>
+                            </div>
+                        </div>
+
+                        <button class="btn-submit" onclick="scheduleContest()" id="btnSchedule" style="margin-top: 15px;">Schedule Contest</button>
+                    </div>
+
+                    <!-- Quick Start Section -->
+                    <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h4 style="color: #1a1a2e; margin-top: 0; margin-bottom: 15px;">Quick Start</h4>
+                        <p style="color: #666; font-size: 14px; margin-bottom: 15px;">Start contest immediately (no countdown)</p>
+
+                        <div class="form-row" style="gap: 10px;">
+                            <div class="form-group" style="flex: 1;">
+                                <label for="quickDuration">Duration (minutes)</label>
+                                <input type="number" id="quickDuration" min="1" value="120" placeholder="120">
+                            </div>
+                            <button class="btn-submit" onclick="startContestNow()" id="btnStartNow" style="align-self: flex-end; margin-bottom: 0;">Start Now</button>
+                        </div>
+                    </div>
+
+                    <!-- Add Time to Pre-Countdown Section -->
+                    <div style="background: #e8f4f8; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h4 style="color: #1a1a2e; margin-top: 0; margin-bottom: 15px;">⏱️ Extend Pre-Countdown</h4>
+                        <p style="color: #666; font-size: 14px; margin-bottom: 15px;">Add extra minutes to the countdown before contest starts</p>
+
+                        <div class="form-row" style="gap: 10px;">
+                            <div class="form-group" style="flex: 1;">
+                                <label for="addPreCountdownMinutes">Minutes to Add</label>
+                                <input type="number" id="addPreCountdownMinutes" min="1" value="5" placeholder="5">
+                            </div>
+                            <button class="btn-submit" onclick="addPreCountdownTime()" id="btnAddPreCountdownTime" style="align-self: flex-end; margin-bottom: 0; background-color: #3498db;" disabled>+ Add Minutes</button>
+                        </div>
+                    </div>
+
+                    <!-- Contest Control Section -->
+                    <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h4 style="color: #1a1a2e; margin-top: 0; margin-bottom: 15px;">Contest Control</h4>
+                        
+                        <div class="form-row" style="gap: 10px;">
+                            <button class="btn-submit" onclick="stopContest()" id="btnStop" style="background-color: #e74c3c; flex: 1;" disabled>Stop Contest</button>
+                            <button class="btn-submit" onclick="resetContest()" id="btnReset" style="background-color: #95a5a6; flex: 1;">Reset</button>
+                        </div>
+
+                        <div class="form-row" style="margin-top: 15px; gap: 10px;">
+                            <div class="form-group" style="flex: 1;">
+                                <label for="addMinutes">Add Minutes (Running Contest)</label>
+                                <input type="number" id="addMinutes" min="1" value="10" placeholder="10">
+                            </div>
+                            <button class="btn-submit" onclick="addTime()" id="btnAddTime" style="align-self: flex-end; margin-bottom: 0;" disabled>+ Add Time</button>
+                        </div>
+                    </div>
+
+                    <div class="form-row" style="margin-top: 15px;">
+                        <label style="display: flex; align-items: center; gap: 10px;">
+                            <input type="checkbox" id="contestVisibility" onchange="toggleVisibility()">
+                            <span>Show Timer to Participants</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/admin.js"></script>
+</body>
+</html>

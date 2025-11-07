@@ -1,0 +1,22 @@
+{
+  "id": "B",
+  "title": "Matrix Power Grid",
+  "origin": "CodeForces 747B",
+  "timeLimit": "2000ms",
+  "memoryLimit": "512MB",
+  "statement": "Dr. Wells needs to analyze a power grid represented as an N×M matrix. Each cell contains a power level. Find the maximum power that can be collected by moving from the top-left corner to the bottom-right corner, where you can only move right or down.",
+  "input": "The first line contains two integers N and M (1 ≤ N, M ≤ 100). The next N lines each contain M integers representing the power levels in the grid (1 ≤ power ≤ 100).",
+  "output": "Print the maximum power that can be collected.",
+  "constraints": "1 ≤ N, M ≤ 100<br>1 ≤ power ≤ 100",
+  "samples": [
+    {
+      "input": "3 3\n1 2 3\n4 5 6\n7 8 9",
+      "output": "29"
+    },
+    {
+      "input": "2 4\n1 3 1 5\n2 1 4 9",
+      "output": "18"
+    }
+  ],
+  "vj_link": "https://vjudge.net/problem/CodeForces-747B"
+}
