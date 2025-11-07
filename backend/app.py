@@ -84,6 +84,14 @@ def get_utc_now():
     """Get current UTC time (timezone-aware)"""
     return datetime.now(timezone.utc)
 
+def make_aware(dt):
+    """Convert naive datetime to UTC-aware datetime"""
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
+
 @app.route('/', methods=['GET'])
 def root():
     """Root route - serve index.html"""
@@ -419,12 +427,14 @@ def get_contest_status():
         
         if contest_dict['status'] == 'pending' and contest_dict['start_time']:
             # Pre-contest: Show countdown until contest starts
-            remaining = (contest_dict['start_time'] - now).total_seconds()
+            start_time = make_aware(contest_dict['start_time'])
+            remaining = (start_time - now).total_seconds()
             remaining_time = max(0, int(remaining))
                 
         elif contest_dict['status'] == 'running' and contest_dict['end_time']:
             # Contest running: Show countdown until end
-            remaining = (contest_dict['end_time'] - now).total_seconds()
+            end_time = make_aware(contest_dict['end_time'])
+            remaining = (end_time - now).total_seconds()
             remaining_time = max(0, int(remaining))
         
         return jsonify({
@@ -472,15 +482,19 @@ def get_last_update():
         needs_update = False
         new_status = current_status
         
-        if current_status == 'pending' and result['start_time'] and result['start_time'] <= now:
-            # Countdown expired, move to running
-            new_status = 'running'
-            needs_update = True
+        if current_status == 'pending' and result['start_time']:
+            start_time = make_aware(result['start_time'])
+            if start_time <= now:
+                # Countdown expired, move to running
+                new_status = 'running'
+                needs_update = True
             
-        elif current_status == 'running' and result['end_time'] and result['end_time'] <= now:
-            # Contest time expired, move to ended
-            new_status = 'ended'
-            needs_update = True
+        elif current_status == 'running' and result['end_time']:
+            end_time = make_aware(result['end_time'])
+            if end_time <= now:
+                # Contest time expired, move to ended
+                new_status = 'ended'
+                needs_update = True
         
         # If transition needed, update NOW (this is called every 10s anyway)
         if needs_update and new_status != current_status:
