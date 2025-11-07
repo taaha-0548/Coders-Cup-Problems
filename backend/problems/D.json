@@ -1,0 +1,26 @@
+{
+  "id": "D",
+  "title": "Cisco's Data Structures",
+  "origin": "CodeForces 1454C",
+  "timeLimit": "2500ms",
+  "memoryLimit": "768MB",
+  "statement": "Cisco Ramon is organizing interdimensional data. He has an array of N integers and needs to find the longest subsequence where each element is greater than the previous one. Help him find the length of the longest increasing subsequence.",
+  "input": "The first line contains an integer N (1 ≤ N ≤ 1000). The second line contains N integers a₁, a₂, ..., aₙ (1 ≤ aᵢ ≤ 10⁹).",
+  "output": "Print the length of the longest increasing subsequence.",
+  "constraints": "1 ≤ N ≤ 1000<br>1 ≤ aᵢ ≤ 10⁹",
+  "samples": [
+    {
+      "input": "6\n1 3 2 4 5 3",
+      "output": "4"
+    },
+    {
+      "input": "8\n10 9 8 7 6 5 4 3",
+      "output": "1"
+    },
+    {
+      "input": "5\n1 2 3 4 5",
+      "output": "5"
+    }
+  ],
+  "vj_link": "https://vjudge.net/problem/CodeForces-1454C"
+}

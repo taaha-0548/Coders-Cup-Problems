@@ -1,0 +1,26 @@
+{
+  "id": "E",
+  "title": "Iris's Pattern Recognition",
+  "origin": "CodeForces 1068A",
+  "timeLimit": "1500ms",
+  "memoryLimit": "384MB",
+  "statement": "Iris West is analyzing crime patterns in Central City. She has a string representing daily crime codes and needs to count how many times a specific pattern appears as a substring. The pattern matching is case-sensitive.",
+  "input": "The first line contains a string S representing daily crime codes (1 ≤ |S| ≤ 1000). The second line contains a string P representing the pattern to search for (1 ≤ |P| ≤ 100). Both strings contain only lowercase English letters.",
+  "output": "Print the number of times pattern P appears as a substring in string S.",
+  "constraints": "1 ≤ |S| ≤ 1000<br>1 ≤ |P| ≤ 100<br>Both strings contain only lowercase English letters",
+  "samples": [
+    {
+      "input": "abababa\naba",
+      "output": "3"
+    },
+    {
+      "input": "programming\nram",
+      "output": "1"
+    },
+    {
+      "input": "hello\nworld",
+      "output": "0"
+    }
+  ],
+  "vj_link": "https://vjudge.net/problem/CodeForces-1068A"
+}
