@@ -12,9 +12,6 @@ import time
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 import signal
-from gzip import GzipFile
-from io import BytesIO
-
 # Load environment variables from backend/.env
 load_dotenv()
 
@@ -24,20 +21,6 @@ FRONTEND_FOLDER = os.path.join(os.path.dirname(__file__), '..', 'frontend')
 app = Flask(__name__, static_folder=FRONTEND_FOLDER, static_url_path='')
 CORS(app)
 app.config['JSON_SORT_KEYS'] = False
-
-# Enable gzip compression for all responses (reduces bandwidth by 70-80%)
-@app.after_request
-def gzip_response(response):
-    """Compress response with gzip if client supports it"""
-    if 'gzip' in request.headers.get('Accept-Encoding', '').lower():
-        if response.data and len(response.data) > 1000:  # Only compress if > 1KB
-            gzip_buffer = BytesIO()
-            with GzipFile(fileobj=gzip_buffer, mode='wb') as gzip_file:
-                gzip_file.write(response.data)
-            response.data = gzip_buffer.getvalue()
-            response.headers['Content-Encoding'] = 'gzip'
-            response.headers['Content-Length'] = len(response.data)
-    return response
 
 DATABASE_URL = os.getenv('DATABASE_URL')
 ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'admin123')  # Change this in production!
