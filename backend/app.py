@@ -12,6 +12,8 @@ import time
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 import signal
+from gzip import GzipFile
+from io import BytesIO
 
 # Load environment variables from backend/.env
 load_dotenv()
@@ -22,6 +24,20 @@ FRONTEND_FOLDER = os.path.join(os.path.dirname(__file__), '..', 'frontend')
 app = Flask(__name__, static_folder=FRONTEND_FOLDER, static_url_path='')
 CORS(app)
 app.config['JSON_SORT_KEYS'] = False
+
+# Enable gzip compression for all responses (reduces bandwidth by 70-80%)
+@app.after_request
+def gzip_response(response):
+    """Compress response with gzip if client supports it"""
+    if 'gzip' in request.headers.get('Accept-Encoding', '').lower():
+        if response.data and len(response.data) > 1000:  # Only compress if > 1KB
+            gzip_buffer = BytesIO()
+            with GzipFile(fileobj=gzip_buffer, mode='wb') as gzip_file:
+                gzip_file.write(response.data)
+            response.data = gzip_buffer.getvalue()
+            response.headers['Content-Encoding'] = 'gzip'
+            response.headers['Content-Length'] = len(response.data)
+    return response
 
 DATABASE_URL = os.getenv('DATABASE_URL')
 ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'admin123')  # Change this in production!
@@ -49,8 +65,8 @@ def timeout(seconds=10):
 try:
     # Add connection timeout to prevent hanging
     connection_url = DATABASE_URL + ("&" if "?" in DATABASE_URL else "?") + "connect_timeout=5"
-    connection_pool = pool.SimpleConnectionPool(1, 5, connection_url)  # Start with 1-5 for reliability
-    print("✓ Connection pool initialized successfully")
+    connection_pool = pool.SimpleConnectionPool(5, 20, connection_url)  # Increased for 400+ users
+    print("✓ Connection pool initialized: 5-20 connections (optimized for 400-500 users)")
 except Exception as e:
     print(f"⚠ Warning: Connection pooling failed: {e}")
     print("  Will use single connections instead")
@@ -119,9 +135,9 @@ def api_info():
 @app.route('/api/problems', methods=['GET'])
 @timeout(5)  # 5 second timeout
 def get_all_problems():
-    """Get all problems (without samples for list view) - CACHED"""
-    # Check cache (valid for 1 hour)
-    if 'all_problems' in cache and (time.time() - cache_timestamp.get('all_problems', 0)) < 3600:
+    """Get all problems (without samples for list view) - CACHED for 90 mins"""
+    # Check cache (valid for 90 minutes = 5400 seconds)
+    if 'all_problems' in cache and (time.time() - cache_timestamp.get('all_problems', 0)) < 5400:
         return jsonify(cache['all_problems'])
     
     conn = get_db_connection()
@@ -148,9 +164,9 @@ def get_all_problems():
 @timeout(5)  # 5 second timeout
 def get_problem(problem_id):
     """Get a specific problem with samples - OPTIMIZED with single query JOIN"""
-    # Check cache first
+    # Check cache first (valid for 90 minutes)
     cache_key = f'problem_{problem_id}'
-    if cache_key in cache and (time.time() - cache_timestamp.get(cache_key, 0)) < 3600:
+    if cache_key in cache and (time.time() - cache_timestamp.get(cache_key, 0)) < 5400:
         return jsonify(cache[cache_key])
     
     conn = get_db_connection()

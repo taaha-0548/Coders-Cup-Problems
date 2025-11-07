@@ -479,10 +479,10 @@ async function checkContestStatus() {
         // Handle problem visibility based on status
         handleProblemVisibilityByStatus(contest);
         
-        // Set up smart polling: Check for updates every 10 seconds (lightweight)
-        // Only fetch full status if something changed
+        // Set up smart polling: Check for updates every 30 seconds (optimized for 400+ users)
+        // Only fetch full status if something changed (lightweight check)
         if (!updateCheckInterval) {
-            updateCheckInterval = setInterval(checkForUpdates, 10000);
+            updateCheckInterval = setInterval(checkForUpdates, 30000);
         }
         
         // Return contest so caller can check status
