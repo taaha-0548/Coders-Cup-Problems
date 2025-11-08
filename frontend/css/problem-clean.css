@@ -466,42 +466,40 @@ body {
     border-collapse: collapse;
     margin: 16px 0 0 0;
     font-size: 13px;
-    border: 1px solid rgba(207, 237, 255, 0.5);
-    border-radius: 12px;
+    border: 2px solid #999;
+    border-radius: 8px;
     overflow: hidden;
-    box-shadow: 0 2px 8px rgba(11, 70, 109, 0.05);
 }
 
 .examples-table th {
-    background: linear-gradient(135deg, var(--color-primaryblue), #0a3d5c);
-    color: white;
-    border: none;
-    padding: 12px 16px;
+    background: #f5f5f5;
+    color: #333;
+    border: 1px solid #d0d0d0;
+    border-right: 1px solid #d0d0d0;
+    padding: 10px 16px;
     font-weight: 600;
     text-align: left;
-    font-size: 13px;
+    font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     font-family: var(--font-montserrat);
 }
 
 .examples-table td {
-    border: none;
-    border-bottom: 1px solid rgba(207, 237, 255, 0.3);
-    padding: 16px;
+    border: 1px solid #d0d0d0;
+    border-right: 1px solid #d0d0d0;
+    padding: 14px 16px;
     vertical-align: top;
     background: white;
     font-size: 13px;
 }
 
 .examples-table tbody tr:last-child td {
-    border-bottom: none;
+    border-bottom: 1px solid #d0d0d0;
 }
 
 .examples-table tbody tr:hover {
-    background: rgba(207, 237, 255, 0.15);
-    transform: scale(1.01);
-    transition: all 0.2s ease;
+    background: #fafafa;
 }
 
 .examples-table pre {
@@ -510,18 +508,15 @@ body {
     font-size: 13px;
     line-height: 1.5;
     white-space: pre;
-    background: rgba(207, 237, 255, 0.1);
-    padding: 12px;
-    border-radius: 6px;
-    border: 1px solid rgba(207, 237, 255, 0.3);
-    color: var(--foreground);
-    transition: all 0.3s ease;
+    background: #fafafa;
+    padding: 10px 12px;
+    border-radius: 4px;
+    border: 1px solid #f0f0f0;
+    color: #333;
 }
 
 .examples-table pre:hover {
-    background: rgba(207, 237, 255, 0.2);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(11, 70, 109, 0.1);
+    background: #f5f5f5;
 }
 
 /* Copy button styling */

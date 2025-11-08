@@ -1,20 +1,18 @@
 {
   "id": "A",
-  "title": "Capitalization",
-  "statement": "Capitalization is writing a word with its first letter as a capital letter. Your task is to capitalize the given word.<br><br>Note, that during capitalization all the letters except the first one remains unchanged.",
-  "input": "A single line contains a non-empty word. This word consists of lowercase and uppercase English letters. The length of the word will not exceed 10<sup>3</sup>.",
-  "output": "Output the given word after capitalization.",
-  "constraints": "1 \u2264 length of word \u2264 10<sup>3</sup>",
+  "title": "Yet Another Xor Problem",
+  "origin": "N/A",
+  "timeLimit": "2000ms",
+  "memoryLimit": "250MB",
+  "statement": "Rehan has started to explore different bitwise operations. Today, he is studying bitwise XOR operation. He has two integers <em>l</em> and <em>r</em>. He wants to find two integers <em>a</em> and <em>b</em> such that <em>l &le; a &lt; b &le; r</em> and the value of <em>a XOR b</em> is maximum possible. Help Rehan find the maximum value of <em>a XOR b</em> so he can move on to next problem.",
+  "input": "The first line contains an integer <em>l</em> and the second line contains an integer <em>r</em> (<code>1 \u2264 l \u2264 r \u2264 10<sup>3</sup></code>).",
+  "output": "Print a single integer — the maximum value of <em>a XOR b</em>.",
+  "constraints": "<code>1 \u2264 t \u2264 10^4</code><br><code>1 \u2264 n \u2264 8</code><br><code>-1 \u2264 a_i \u2264 1</code>",
   "samples": [
     {
-      "input": "ApPLe",
-      "output": "ApPLe"
-    },
-    {
-      "input": "konjac",
-      "output": "Konjac"
+      "input": "10\n15",
+      "output": "7"
     }
   ],
-  "note": "In the first example, the first letter is already capitalized, so the word remains unchanged. In the second example, 'k' is capitalized to 'K', while all other letters remain the same.",
-  "vj_link": "https://vjudge.net/contest/764687#problem/A"
+  "vj_link": "https://vjudge.net/contest/764956#problem/A"
 }

@@ -211,43 +211,52 @@ function displayProblem(problem) {
     // Update problem header - VJudge style simple title
     problemTitle.textContent = `${problem.id} - ${problem.title}`;
     
-    // Update problem content - direct HTML rendering
-    problemStatement.innerHTML = problem.statement;
-    problemInput.innerHTML = problem.input;
-    problemOutput.innerHTML = problem.output;
+    // Update problem content - direct HTML rendering (only if field exists)
+    problemStatement.innerHTML = problem.statement || '';
+    problemInput.innerHTML = problem.input || '';
+    problemOutput.innerHTML = problem.output || '';
     
-    // Update constraints
+    // Update constraints - show only if present in API response
     if (problem.constraints) {
         problemConstraints.innerHTML = problem.constraints;
     } else {
         problemConstraints.innerHTML = "No constraints specified.";
     }
     
-    // Update examples
+    // Update examples - show only if present in API response
     if (problem.samples && problem.samples.length > 0) {
         problemExamples.innerHTML = createExamplesTable(problem.samples);
     } else {
         problemExamples.innerHTML = 'No examples provided.';
     }
     
-    // Show note section if problem has notes
+    // Show note section if problem has notes (only if present in API response)
     if (problem.note) {
         problemNote.innerHTML = problem.note;
         if (problemNoteSection) {
             problemNoteSection.style.display = 'block';
         }
     } else {
+        // Clear note content and hide section
+        problemNote.innerHTML = '';
         if (problemNoteSection) {
             problemNoteSection.style.display = 'none';
         }
     }
     
-    // Update sidebar info - simplified (difficulty removed)
+    // Update sidebar info - use ONLY what's in the API response
     const timeLimitElement = document.getElementById('problem-time-limit');
     const memoryLimitElement = document.getElementById('problem-memory-limit');
     
-    if (timeLimitElement) timeLimitElement.textContent = problem.timeLimit || problem.time_limit || '-';
-    if (memoryLimitElement) memoryLimitElement.textContent = problem.memoryLimit || problem.memory_limit || '-';
+    // Only display if field exists in API response, otherwise show '-'
+    if (timeLimitElement) {
+        timeLimitElement.textContent = (problem.timeLimit !== undefined ? problem.timeLimit : 
+                                        problem.time_limit !== undefined ? problem.time_limit : '-');
+    }
+    if (memoryLimitElement) {
+        memoryLimitElement.textContent = (problem.memoryLimit !== undefined ? problem.memoryLimit : 
+                                          problem.memory_limit !== undefined ? problem.memory_limit : '-');
+    }
     
     // Update submit button
     if (submitBtn) {
