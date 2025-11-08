@@ -579,6 +579,7 @@ async function checkContestStatus() {
 }
 
 // Fast check: Poll the last-update endpoint (very lightweight)
+// Dynamically adjust frequency based on remaining time
 async function checkForUpdates() {
     try {
         const response = await fetch(`${API_URL}/contest/last-update`);
@@ -591,9 +592,33 @@ async function checkForUpdates() {
             lastUpdateCheck = data.last_update;
             checkContestStatusOnce();  // Fetch full status and detect transitions
         }
+        
+        // Dynamically adjust update frequency based on remaining time
+        adjustUpdateCheckInterval();
     } catch (error) {
         console.error('Error checking for updates:', error);
     }
+}
+
+// Adjust update check interval based on remaining time
+function adjustUpdateCheckInterval() {
+    // If no interval is set, don't adjust
+    if (!updateCheckInterval) return;
+    
+    // Clear existing interval
+    clearInterval(updateCheckInterval);
+    
+    let newInterval = 30000; // Default: 30 seconds
+    
+    // When timer is under 30 seconds, check more frequently
+    if (localRemainingTime > 0 && localRemainingTime <= 30) {
+        // Under 30 seconds: check every 5 seconds
+        newInterval = 5000;
+        console.log(`⚡ Critical: checking for updates every 5 seconds (${localRemainingTime}s remaining)`);
+    }
+    
+    // Set new interval
+    updateCheckInterval = setInterval(checkForUpdates, newInterval);
 }
 
 // Check status once
@@ -712,6 +737,9 @@ function updateTimerDisplay(contest) {
 }
 
 function displayTimeFormatted(seconds, element) {
+    // Prevent negative time display
+    if (seconds < 0) seconds = 0;
+    
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = Math.floor(seconds % 60);
@@ -725,6 +753,10 @@ function startTimerCountdown() {
     timerCountdownInterval = setInterval(() => {
         if (localRemainingTime > 0) {
             localRemainingTime -= 0.1;  // Decrease by 100ms
+            // Clamp to 0 to prevent negative values
+            if (localRemainingTime < 0) {
+                localRemainingTime = 0;
+            }
             updateAllTimerDisplays();
         }
     }, 100);  // Update every 100ms for smooth animation
