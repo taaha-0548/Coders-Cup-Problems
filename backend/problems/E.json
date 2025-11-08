@@ -1,26 +1,17 @@
 {
   "id": "E",
-  "title": "Iris's Pattern Recognition",
-  "origin": "CodeForces 1068A",
-  "timeLimit": "1500ms",
-  "memoryLimit": "384MB",
-  "statement": "Iris West is analyzing crime patterns in Central City. She has a string representing daily crime codes and needs to count how many times a specific pattern appears as a substring. The pattern matching is case-sensitive.",
-  "input": "The first line contains a string S representing daily crime codes (1 \u2264 |S| \u2264 1000). The second line contains a string P representing the pattern to search for (1 \u2264 |P| \u2264 100). Both strings contain only lowercase English letters.",
-  "output": "Print the number of times pattern P appears as a substring in string S.",
-  "constraints": "1 \u2264 |S| \u2264 1000<br>1 \u2264 |P| \u2264 100<br>Both strings contain only lowercase English letters",
+  "title": "Yet Another Swapping Problem",
+  "origin": "N/A",
+  "timeLimit": "2000ms",
+  "memoryLimit": "512MB",
+  "statement": "There are <em>N</em> people sitting at a circular table for a long session of negotiations. Each person belongs to one of the three groups: A, B, or C. A group is happy if all of its members are sitting contiguously in a block of consecutive seats. You would like to make all groups happy by performing some sequence of swap operations. In each swap, two people exchange seats. Determine the minimum number of swaps required to make all groups happy.",
+  "input": "The input consists of a single line containing <em>N</em> characters (<code>1 ≤ N ≤ 1,000,000</code>), where each character is 'A', 'B', or 'C'. The i-th character denotes the group of the person initially sitting at the i-th seat (seats are numbered clockwise).",
+  "output": "Print a single integer — the minimum number of swaps required to make all groups happy.",
   "samples": [
     {
-      "input": "abababa\naba",
-      "output": "3"
-    },
-    {
-      "input": "programming\nram",
-      "output": "1"
-    },
-    {
-      "input": "hello\nworld",
-      "output": "0"
+      "input": "BABCBCACCA",
+      "output": "2"
     }
   ],
-  "vj_link": "https://vjudge.net/problem/CodeForces-1068A"
+  "vj_link": "https://vjudge.net/contest/764956#problem/E"
 }

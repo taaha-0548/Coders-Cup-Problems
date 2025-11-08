@@ -8,6 +8,8 @@ let phaseCheckTimer = null;
 let localRemainingTime = 0;
 let lastUpdateCheck = 0;  // Track last-update timestamp for smart polling
 let updateCheckInterval = null;  // Poll for updates every 5 seconds
+let problemCache = {};  // Cache individual problems with timestamps
+let problemCacheVersion = 0;  // Track cache version for invalidation
 
 // API URL - dynamically set based on current domain
 const API_URL = window.location.origin + '/api';
@@ -163,17 +165,30 @@ function loadProblem(problemId) {
         // Timer is now synced with server
         console.log(`Timer synced: ${localRemainingTime}s remaining`);
         
-        // Fetch full problem details from API
+        // Check if problem is already cached and fresh
+        if (problemCache[problemId]) {
+            console.log(`Using cached problem ${problemId}`);
+            currentProblem = problemCache[problemId];
+            displayProblem(currentProblem);
+            updateActiveNavLink(problemId);
+            showLoading(false);
+            return;
+        }
+        
+        // Fetch full problem details from API (not in cache)
         fetch(`${API_URL}/problems/${problemId}`)
             .then(response => {
                 if (!response.ok) throw new Error(`Failed to fetch problem ${problemId}`);
                 return response.json();
             })
             .then(fullProblem => {
+                // Cache the problem
+                problemCache[problemId] = fullProblem;
                 currentProblem = fullProblem;
                 displayProblem(fullProblem);
                 updateActiveNavLink(problemId);
                 showLoading(false);
+                console.log(`Fetched and cached problem ${problemId}`);
             })
             .catch(error => {
                 console.error(`Error loading problem ${problemId}:`, error);
@@ -183,16 +198,30 @@ function loadProblem(problemId) {
     }).catch(error => {
         console.error('Error syncing timer:', error);
         // Continue loading problem even if timer sync fails
+        
+        // Check cache first
+        if (problemCache[problemId]) {
+            console.log(`Using cached problem ${problemId} (timer sync failed)`);
+            currentProblem = problemCache[problemId];
+            displayProblem(currentProblem);
+            updateActiveNavLink(problemId);
+            showLoading(false);
+            return;
+        }
+        
         fetch(`${API_URL}/problems/${problemId}`)
             .then(response => {
                 if (!response.ok) throw new Error(`Failed to fetch problem ${problemId}`);
                 return response.json();
             })
             .then(fullProblem => {
+                // Cache the problem
+                problemCache[problemId] = fullProblem;
                 currentProblem = fullProblem;
                 displayProblem(fullProblem);
                 updateActiveNavLink(problemId);
                 showLoading(false);
+                console.log(`Fetched and cached problem ${problemId}`);
             })
             .catch(err => {
                 console.error(`Error loading problem ${problemId}:`, err);

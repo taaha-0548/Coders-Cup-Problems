@@ -1,18 +1,17 @@
 {
   "id": "D",
-  "title": "Closest Point Addition",
-  "origin": "Custom Problem",
+  "title": "Yet Another GPA Problem",
+  "origin": "N/A",
   "timeLimit": "2000ms",
-  "memoryLimit": "512MB",
-  "statement": "<p>Consider a set of points on a line. The distance between two points <code>i</code> and <code>j</code> is <code>|i - j|</code>.</p><p>The point <code>i</code> from the set is <span class=\"tex-font-style-bf\">the closest</span> to the point <code>j</code> from the set, if there is no other point <code>k</code> in the set such that the distance from <code>j</code> to <code>k</code> is <span class=\"tex-font-style-bf\">strictly less</span> than the distance from <code>j</code> to <code>i</code>. In other words, all other points from the set have distance to <code>j</code> greater or equal to <code>|i - j|</code>.</p><p>For example, consider a set of points <code>{1, 3, 5, 8}</code>:</p><ul> <li> for the point <code>1</code>, the closest point is <code>3</code> (other points have distance greater than <code>|1-3| = 2</code>); </li><li> for the point <code>3</code>, there are two closest points: <code>1</code> and <code>5</code>; </li><li> for the point <code>5</code>, the closest point is <code>3</code> (but not <code>8</code>, since its distance is greater than <code>|3-5|</code>); </li><li> for the point <code>8</code>, the closest point is <code>5</code>. </li></ul><p>You are given a set of points. You have to add an <span class=\"tex-font-style-bf\">integer</span> point into this set in such a way that <span class=\"tex-font-style-bf\">it is different from every existing point in the set</span>, and <span class=\"tex-font-style-bf\">it becomes the closest point to every point in the set</span>. Is it possible?</p>",
-  "input": "<p>The first line contains one integer <code>t</code> (<code>1 \u2264 t \u2264 1000</code>) — the number of test cases.</p><p>Each test case consists of two lines:</p><ul> <li> the first line contains one integer <code>n</code> (<code>2 \u2264 n \u2264 40</code>) — the number of points in the set; </li><li> the second line contains <code>n</code> integers <code>x_1, x_2, \u2026, x_n</code> (<code>1 \u2264 x_1 &lt; x_2 &lt; \u2026 &lt; x_n \u2264 100</code>) — the points from the set. </li></ul>",
-  "output": "<p>For each test case, print <span class=\"tex-font-style-tt\">YES</span> if it is possible to add a new point according to the conditions from the statement. Otherwise, print <span class=\"tex-font-style-tt\">NO</span>.</p>",
-  "constraints": "<p>2 \u2264 n \u2264 40</p><p>1 \u2264 x_1 &lt; x_2 &lt; \u2026 &lt; x_n \u2264 100</p>",
+  "memoryLimit": "256MB",
+  "statement": "Munnazzar cries a lot about his GPA. He stops crying if his GPA is at least <em>m</em>; otherwise, he continues crying. Every semester, his GPA increases by 1. If his current GPA is <em>n</em>, determine after how many semesters he will stop crying.",
+  "input": "The first line contains an integer <em>T</em> — the number of test cases (<code>1 ≤ T ≤ 1000</code>). Each of the next <em>T</em> lines contains two space-separated integers <em>n</em> and <em>m</em> (<code>0 ≤ n, m ≤ 600</code>), representing the current GPA and the minimum GPA Munnazzar wishes to have.",
+  "output": "For each test case, print a single integer — the number of semesters after which Munnazzar will stop crying.",
   "samples": [
     {
-      "input": "3\n2\n3 8\n2\n5 6\n6\n1 2 3 4 5 10",
-      "output": "YES\nNO\nNO"
+      "input": "3\n5 10\n4 21\n9 5",
+      "output": "5\n17\n0"
     }
   ],
-  "vj_link": "https://vjudge.net/contest/764687#problem/D"
+  "vj_link": "https://vjudge.net/contest/764956#problem/D"
 }
