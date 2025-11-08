@@ -128,15 +128,6 @@ function initializeAnimations() {
 // Load all problems from API to support navigation
 async function loadAllProblems() {
     try {
-        // Check if already cached
-        const cachedProblems = localStorage.getItem('cachedProblems');
-        if (cachedProblems) {
-            allProblems = JSON.parse(cachedProblems);
-            console.log('✓ Loaded all problems from cache');
-            return;
-        }
-        
-        // First time: fetch from API
         console.log('Loading all problems from API...');
         const response = await fetch(`${API_URL}/problems`);
         
@@ -145,10 +136,7 @@ async function loadAllProblems() {
         }
         
         allProblems = await response.json();
-        
-        // Cache permanently
-        localStorage.setItem('cachedProblems', JSON.stringify(allProblems));
-        console.log(`✓ Loaded ${allProblems.length} problems from API and cached`);
+        console.log(`✓ Loaded ${allProblems.length} problems from API`);
         
     } catch (error) {
         console.error('Error loading problems:', error);
