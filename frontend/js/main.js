@@ -80,6 +80,8 @@ function togglePasswordVisibility() {
 
 // Global variables
 let allProblems = [];
+let lastProblemsUpdateTime = 0; // Track when problems were last fetched
+const PROBLEMS_CACHE_DURATION = 60000; // 1 minute in milliseconds
 
 // Contest status variables
 let statusPollingInterval = null;
@@ -280,13 +282,14 @@ function initializeAnimations() {
 // Load all problems from API
 async function loadProblems() {
     try {
-        // Always fetch fresh data from API (no caching)
+        // Always fetch fresh data from API
         const response = await fetch(`${API_URL}/problems`);
         if (!response.ok) {
             throw new Error(`API returned status ${response.status}`);
         }
 
         allProblems = await response.json();
+        lastProblemsUpdateTime = Date.now(); // Update timestamp when fetched
         console.log(`✓ Loaded ${allProblems.length} problems from API`);
         displayProblems(); // Ensure DOM updates
     } catch (error) {
@@ -497,9 +500,13 @@ function showProblems() {
         </div>
     `;
     
-    // Load problems ONLY ONCE
-    if (allProblems.length === 0) {
-        // Problems not yet loaded, fetch them
+    // Check if cache is still fresh or if we need to refetch
+    const now = Date.now();
+    const isCacheStale = (now - lastProblemsUpdateTime) > PROBLEMS_CACHE_DURATION;
+    
+    // Always fetch fresh data if cache is stale or problems are not yet loaded
+    if (allProblems.length === 0 || isCacheStale) {
+        // Fetch fresh problems
         loadProblems().then(() => {
             hideLoading(); // Hide main overlay after problems are loaded
             // After loading, check contest status and display accordingly
@@ -512,7 +519,7 @@ function showProblems() {
             hideLoading(); // Hide main overlay even if there's an error
         });
     } else {
-        // Problems already loaded, just display them
+        // Cache is fresh, just display loaded problems
         hideLoading();
         if (lastContestStatus) {
             displayProblemsBasedOnStatus(lastContestStatus);

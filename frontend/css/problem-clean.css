@@ -524,6 +524,36 @@ body {
     box-shadow: 0 2px 8px rgba(11, 70, 109, 0.1);
 }
 
+/* Copy button styling */
+.copy-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: #e8e8e8;
+    color: #666;
+    border: 1px solid #d0d0d0;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: var(--font-cascadia);
+    z-index: 10;
+    opacity: 1;
+}
+
+.copy-btn:hover {
+    background: #d8d8d8;
+    color: #333;
+    border-color: #b0b0b0;
+}
+
+.copy-btn:active {
+    background: #c8c8c8;
+    transform: scale(0.98);
+}
+
 /* Loading overlay */
 .loading-overlay {
     position: fixed;

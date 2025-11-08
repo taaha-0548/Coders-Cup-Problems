@@ -251,10 +251,23 @@ function createExamplesTable(samples) {
     html += '<tbody>';
     
     samples.forEach((sample, index) => {
+        const inputId = `input-${index}`;
+        const outputId = `output-${index}`;
+        
         html += `
             <tr>
-                <td><pre>${sample.input}</pre></td>
-                <td><pre>${sample.output}</pre></td>
+                <td>
+                    <div style="position: relative;">
+                        <pre id="${inputId}">${sample.input}</pre>
+                        <button class="copy-btn" onclick="copyToClipboard(document.getElementById('${inputId}').textContent, 'Input')" title="Copy Input">Copy</button>
+                    </div>
+                </td>
+                <td>
+                    <div style="position: relative;">
+                        <pre id="${outputId}">${sample.output}</pre>
+                        <button class="copy-btn" onclick="copyToClipboard(document.getElementById('${outputId}').textContent, 'Output')" title="Copy Output">Copy</button>
+                    </div>
+                </td>
             </tr>
         `;
     });
