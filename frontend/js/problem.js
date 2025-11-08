@@ -157,23 +157,48 @@ function loadProblem(problemId) {
         return;
     }
     
-    // Fetch full problem details from API
-    fetch(`${API_URL}/problems/${problemId}`)
-        .then(response => {
-            if (!response.ok) throw new Error(`Failed to fetch problem ${problemId}`);
-            return response.json();
-        })
-        .then(fullProblem => {
-            currentProblem = fullProblem;
-            displayProblem(fullProblem);
-            updateActiveNavLink(problemId);
-            showLoading(false);
-        })
-        .catch(error => {
-            console.error(`Error loading problem ${problemId}:`, error);
-            showError(`Failed to load problem. ${error.message}`);
-            showLoading(false);
-        });
+    // Refresh contest status and timer on problem change
+    checkContestStatusOnce().then(() => {
+        // Timer is now synced with server
+        console.log(`Timer synced: ${localRemainingTime}s remaining`);
+        
+        // Fetch full problem details from API
+        fetch(`${API_URL}/problems/${problemId}`)
+            .then(response => {
+                if (!response.ok) throw new Error(`Failed to fetch problem ${problemId}`);
+                return response.json();
+            })
+            .then(fullProblem => {
+                currentProblem = fullProblem;
+                displayProblem(fullProblem);
+                updateActiveNavLink(problemId);
+                showLoading(false);
+            })
+            .catch(error => {
+                console.error(`Error loading problem ${problemId}:`, error);
+                showError(`Failed to load problem. ${error.message}`);
+                showLoading(false);
+            });
+    }).catch(error => {
+        console.error('Error syncing timer:', error);
+        // Continue loading problem even if timer sync fails
+        fetch(`${API_URL}/problems/${problemId}`)
+            .then(response => {
+                if (!response.ok) throw new Error(`Failed to fetch problem ${problemId}`);
+                return response.json();
+            })
+            .then(fullProblem => {
+                currentProblem = fullProblem;
+                displayProblem(fullProblem);
+                updateActiveNavLink(problemId);
+                showLoading(false);
+            })
+            .catch(err => {
+                console.error(`Error loading problem ${problemId}:`, err);
+                showError(`Failed to load problem. ${err.message}`);
+                showLoading(false);
+            });
+    });
 }
 
 // Display problem content
