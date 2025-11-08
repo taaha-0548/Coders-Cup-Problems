@@ -255,8 +255,8 @@ async function saveProblem() {
     const note = document.getElementById('problemNote').value.trim();
     const vjLink = document.getElementById('problemVjLink').value.trim();
     
-    // Validation
-    if (!problemId || !title || !statement || !input || !output || !constraints || !vjLink) {
+    // Validation - constraints is now optional
+    if (!problemId || !title || !statement || !input || !output || !vjLink) {
         showMessage('error', 'Please fill in all required fields!', 'message');
         return;
     }

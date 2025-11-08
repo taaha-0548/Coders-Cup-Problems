@@ -35,6 +35,7 @@ const problemStatement = document.getElementById('problem-statement');
 const problemInput = document.getElementById('problem-input');
 const problemOutput = document.getElementById('problem-output');
 const problemConstraints = document.getElementById('problem-constraints');
+const problemConstraintsSection = document.getElementById('problem-constraints-section');
 const problemExamples = document.getElementById('problem-examples');
 const problemNoteSection = document.getElementById('problem-note-section');
 const problemNote = document.getElementById('problem-note');
@@ -203,6 +204,20 @@ function loadProblem(problemId) {
 
 // Display problem content
 function displayProblem(problem) {
+    // CLEAR ALL FIELDS FIRST to prevent any cached data from showing
+    problemStatement.innerHTML = '';
+    problemInput.innerHTML = '';
+    problemOutput.innerHTML = '';
+    problemConstraints.innerHTML = '';
+    problemExamples.innerHTML = '';
+    problemNote.innerHTML = '';
+    if (problemNoteSection) {
+        problemNoteSection.style.display = 'none';
+    }
+    if (problemConstraintsSection) {
+        problemConstraintsSection.style.display = 'none';
+    }
+    
     // Update page title
     if (pageTitle) {
         pageTitle.textContent = `${problem.id} - ${problem.title} - ACM Skill Prep`;
@@ -211,16 +226,22 @@ function displayProblem(problem) {
     // Update problem header - VJudge style simple title
     problemTitle.textContent = `${problem.id} - ${problem.title}`;
     
-    // Update problem content - direct HTML rendering (only if field exists)
+    // Update problem content - only use what's in the API response
     problemStatement.innerHTML = problem.statement || '';
     problemInput.innerHTML = problem.input || '';
     problemOutput.innerHTML = problem.output || '';
     
-    // Update constraints - show only if present in API response
+    // Update constraints - hide entire section if not present in API response
     if (problem.constraints) {
         problemConstraints.innerHTML = problem.constraints;
+        if (problemConstraintsSection) {
+            problemConstraintsSection.style.display = 'block';
+        }
     } else {
-        problemConstraints.innerHTML = "No constraints specified.";
+        // Hide constraints section completely if not available
+        if (problemConstraintsSection) {
+            problemConstraintsSection.style.display = 'none';
+        }
     }
     
     // Update examples - show only if present in API response
@@ -237,7 +258,7 @@ function displayProblem(problem) {
             problemNoteSection.style.display = 'block';
         }
     } else {
-        // Clear note content and hide section
+        // Keep note hidden and empty
         problemNote.innerHTML = '';
         if (problemNoteSection) {
             problemNoteSection.style.display = 'none';

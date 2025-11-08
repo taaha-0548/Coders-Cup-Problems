@@ -1,19 +1,17 @@
 {
   "id": "B",
-  "title": "Array Product",
-  "origin": "CodeForces 1490B",
-  "timeLimit": "1500ms",
-  "memoryLimit": "384MB",
-  "statement": "Given an array <code>a</code> of <code>n</code> elements, where each element is equal to <code>-1</code>, <code>0</code>, or <code>1</code>. In one operation, you can choose an index <code>i</code> and increase <code>a_i</code> by <code>1</code> (that is, assign <code>a_i := a_i + 1</code>). Operations can be performed any number of times, choosing any indices.<br><br>The goal is to make the product of all elements in the array strictly positive with the minimum number of operations, that is, <code>a_1 \u22C5 a_2 \u22C5 a_3 \u22C5 \u22C5 \u22C5 a_n > 0</code>. Find the minimum number of operations.<br><br>It is guaranteed that this is always possible.",
-  "input": "Each test consists of several test cases.<br><br>The first line contains one integer <code>t</code> (<code>1 \u2264 t \u2264 10^4</code>) — the number of test cases. The description of the test cases follows.<br><br>The first line of each test case contains one integer <code>n</code> (<code>1 \u2264 n \u2264 8</code>) — the length of the array <code>a</code>.<br><br>The second line contains <code>n</code> integers <code>a_1, a_2, \u2026, a_n</code>, where <code>-1 \u2264 a_i \u2264 1</code> — the elements of the array <code>a</code>.",
-  "output": "For each test case, output one integer — the minimum number of operations required to make the product of the elements in the array strictly positive.",
-  "constraints": "<code>1 \u2264 t \u2264 10^4</code><br><code>1 \u2264 n \u2264 8</code><br><code>-1 \u2264 a_i \u2264 1</code>",
+  "title": "Yet Another Permuation Problem",
+  "origin": "N/A",
+  "timeLimit": "2000ms",
+  "memoryLimit": "256MB",
+  "statement": "The Coders Cup begins on Monday! Now, the head of Competitive Programming, Mr. Taaha, wants to make a seating arrangement for all the teams. To keep the CP vibe alive even here, he decides that the arrangement should follow a very mathematical pattern.<br><br>There are <em>n</em> teams numbered from <em>1</em> to <em>n</em>, and seats are also numbered from <em>1</em> to <em>n</em>. Mr. Taaha wants to arrange the teams in such a way that the absolute difference between the team’s number and their seat number is exactly <em>k</em>.<br><br>Formally, for every position <em>i</em> (1-indexed), the team sitting at that position should have a number <em>p[i]</em> such that <code>|p[i] - i| = k</code>.<br><br>Among all possible valid seatings, Taaha wants the lexicographically smallest arrangement. If no valid arrangement exists, print <code>-1</code>.<br><br>Your task is to help him find this special seating plan so the Coders Cup can begin in perfect CP symmetry!",
+"input": "The first line contains an integer <em>t</em> — the number of test cases (<code>1 ≤ t ≤ 10</code>). Each of the next <em>t</em> lines contains two space-separated integers <em>n</em> and <em>k</em> (<code>1 ≤ n ≤ 10<sup>5</sup></code>, <code>0 ≤ k ≤ n</code>).",
+  "output": "If a seating plan does not exist, print -1, otherwise print <em>n</em> space-separated integers representing the lexicographically smallest valid arrangement.",
   "samples": [
     {
-      "input": "3\n3\n-1 0 1\n4\n-1 -1 0 1\n5\n-1 -1 -1 0 0",
-      "output": "3\n1\n4"
+      "input": "3\n2 1\n3 0\n3 2",
+      "output": "2 1\n1 2 3\n-1"
     }
   ],
-  "note": "In the first test case: from <code>[-1, 0, 1]</code>, you can obtain <code>[1, 1, 1]</code> in <code>3</code> operations.<br><br>In the second test case: it is enough to perform <code>0 \u2192 1</code> (1 operation). In the resulting array <code>a=[-1,-1,1,1]</code>, the product of all elements is <code>1</code>.<br><br>In the third test case: turning two zeros into ones (2 operations), and one <code>-1</code> into <code>1</code> (another 2 operations), for a total of <code>4</code>.",
-  "vj_link": "https://vjudge.net/contest/764687#problem/B"
+  "vj_link": "https://vjudge.net/contest/764956#problem/B"
 }
