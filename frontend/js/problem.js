@@ -11,6 +11,10 @@ let updateCheckInterval = null;  // Poll for updates every 5 seconds
 let problemCache = {};  // Cache individual problems with timestamps
 let problemCacheVersion = 0;  // Track cache version for invalidation
 
+// ✅ Smart status caching variables
+let lastStatusCheckTime = 0;
+const STATUS_CHECK_INTERVAL = 5000;  // Cache status for 5 seconds
+
 // API URL - dynamically set based on current domain
 const API_URL = window.location.origin + '/api';
 
@@ -64,6 +68,12 @@ document.addEventListener('DOMContentLoaded', function() {
             loadProblem(problemId);
             setupProblemNavigation();
             initializeAnimations();
+            
+            // ✅ After displaying first problem, batch fetch ALL remaining problems
+            // This preloads them for instant switching later
+            setTimeout(() => {
+                batchPreloadAllProblems(problemId);
+            }, 100);  // Small delay to let UI render first
         });
     });
     
@@ -147,6 +157,44 @@ async function loadAllProblems() {
     }
 }
 
+// ✅ BATCH PRELOAD: Fetch all remaining problems at once after displaying first
+async function batchPreloadAllProblems(currentProblemId) {
+    try {
+        // Get IDs of all problems except the current one
+        const remainingIds = allProblems
+            .filter(p => p.id !== currentProblemId && !problemCache[p.id])
+            .map(p => p.id);
+        
+        if (remainingIds.length === 0) {
+            console.log('✓ All problems already cached');
+            return;
+        }
+        
+        const idsParam = remainingIds.join(',');
+        console.log(`🚀 Batch preloading ${remainingIds.length} problems: ${idsParam}`);
+        
+        const response = await fetch(`${API_URL}/problems/batch?ids=${idsParam}`);
+        
+        if (!response.ok) {
+            throw new Error(`Batch fetch failed with status ${response.status}`);
+        }
+        
+        const problems = await response.json();
+        
+        // Cache all problems at once
+        problems.forEach(problem => {
+            problemCache[problem.id] = problem;
+            console.log(`✓ Cached ${problem.id}`);
+        });
+        
+        console.log(`✅ All ${problems.length} problems preloaded and cached!`);
+        
+    } catch (error) {
+        console.error('Batch preload error:', error);
+        // Silent fail - user can still load problems individually if needed
+    }
+}
+
 // Load a specific problem from API
 function loadProblem(problemId) {
     console.log('Loading problem:', problemId);
@@ -161,8 +209,8 @@ function loadProblem(problemId) {
         // Display instantly (no loading overlay)
         displayProblem(currentProblem);
         
-        // Sync timer in background (non-blocking)
-        checkContestStatusOnce().catch(error => {
+        // Sync timer in background (non-blocking) - use smart caching to avoid redundant calls
+        checkContestStatusSmart().catch(error => {
             console.error('Background timer sync failed:', error);
         });
         
@@ -188,7 +236,7 @@ function loadProblem(problemId) {
     // Run timer check and problem fetch in PARALLEL instead of sequential
     // This saves 100-200ms by not waiting for timer check before fetching problem
     Promise.all([
-        checkContestStatusOnce(),  // Start timer sync
+        checkContestStatusSmart(),  // ✅ Use smart caching (skip API if <5s old)
         fetch(`${API_URL}/problems/${problemId}`)  // Start problem fetch at same time
             .then(response => {
                 if (!response.ok) throw new Error(`Failed to fetch problem ${problemId}`);
@@ -598,7 +646,7 @@ async function checkForUpdates() {
         // If something changed since we last checked, fetch full status
         if (data.last_update > lastUpdateCheck) {
             lastUpdateCheck = data.last_update;
-            checkContestStatusOnce();  // Fetch full status and detect transitions
+            checkContestStatusSmart();  // Fetch full status and detect transitions (or use cached if recent)
         }
         
         // Dynamically adjust update frequency based on remaining time
@@ -630,6 +678,21 @@ function adjustUpdateCheckInterval() {
 }
 
 // Check status once
+// ✅ SMART STATUS CACHING: Skip redundant API calls within 5 seconds
+async function checkContestStatusSmart() {
+    const now = Date.now();
+    
+    // If we have a cached status and it's within the 5-second interval, return cached
+    if (lastContestStatus && (now - lastStatusCheckTime) < STATUS_CHECK_INTERVAL) {
+        console.log(`✓ Using cached status (${Math.round((now - lastStatusCheckTime) / 1000)}s old, max ${STATUS_CHECK_INTERVAL / 1000}s)`);
+        return lastContestStatus;  // Return cached - no API call!
+    }
+    
+    // Otherwise fetch fresh status from API
+    console.log('🔄 Status cache expired or empty, fetching fresh status...');
+    return checkContestStatusOnce();  // Calls the full status check and updates cache
+}
+
 async function checkContestStatusOnce() {
     try {
         console.log('Checking contest status once (from problem.js)');
@@ -653,6 +716,7 @@ async function checkContestStatusOnce() {
         }
         
         lastContestStatus = contest;
+        lastStatusCheckTime = Date.now();  // ✅ Update timestamp for smart caching
         window.lastBroadcastSource = null;  // Clear after processing
         updateTimerDisplay(contest);
         

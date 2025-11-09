@@ -203,6 +203,72 @@ def get_problem(problem_id):
     finally:
         release_connection(conn)
 
+@app.route('/api/problems/batch', methods=['GET'])
+@timeout(5)  # 5 second timeout
+def get_problems_batch():
+    """Get multiple problems at once (batch fetch) - OPTIMIZED for contest preload"""
+    # Get problem IDs from query string: /api/problems/batch?ids=A,B,C,D,E,F,G
+    ids_param = request.args.get('ids', '')
+    
+    if not ids_param:
+        return jsonify([])
+    
+    # Parse and validate IDs (max 20 to prevent abuse)
+    problem_ids = [id.strip() for id in ids_param.split(',') if id.strip()]
+    problem_ids = problem_ids[:20]  # Safety limit
+    
+    if not problem_ids:
+        return jsonify([])
+    
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'error': 'Database connection failed'}), 500
+    
+    try:
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        
+        # ✅ OPTIMIZED: Single query for all problems with JOIN and JSON aggregation
+        placeholders = ','.join(['%s'] * len(problem_ids))
+        
+        cursor.execute(f"""
+            SELECT 
+                p.id, p.title, p.origin, p.time_limit, p.memory_limit, 
+                p.statement, p.input, p.output, p.constraints, p.note, p.vj_link,
+                COALESCE(json_agg(
+                    json_build_object('input', s.input, 'output', s.output)
+                    ORDER BY s.id
+                ) FILTER (WHERE s.id IS NOT NULL), '[]'::json) as samples_json
+            FROM problems p
+            LEFT JOIN samples s ON p.id = s.problem_id
+            WHERE p.id IN ({placeholders})
+            GROUP BY p.id, p.title, p.origin, p.time_limit, p.memory_limit,
+                     p.statement, p.input, p.output, p.constraints, p.note, p.vj_link
+            ORDER BY p.id
+        """, problem_ids)
+        
+        results = cursor.fetchall()
+        cursor.close()
+        
+        # Convert results to dicts with camelCase
+        problems = []
+        for result in results:
+            problem_dict = dict(result)
+            problem_dict['samples'] = result['samples_json']
+            del problem_dict['samples_json']
+            
+            # Rename fields to camelCase for API consistency
+            problem_dict['timeLimit'] = problem_dict.pop('time_limit')
+            problem_dict['memoryLimit'] = problem_dict.pop('memory_limit')
+            problem_dict['vjLink'] = problem_dict.pop('vj_link')
+            
+            problems.append(problem_dict)
+        
+        return jsonify(problems)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        release_connection(conn)
+
 @app.route('/api/health', methods=['GET'])
 def health_check():
     """Health check endpoint"""
