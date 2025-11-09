@@ -143,66 +143,6 @@ def get_all_problems():
     finally:
         release_connection(conn)
 
-@app.route('/api/problems/<problem_id>', methods=['GET'])
-@timeout(5)  # 5 second timeout
-def get_problem(problem_id):
-    """Get a specific problem with samples - OPTIMIZED with single query JOIN"""
-    # Check cache first (valid for 30 minutes)
-    cache_key = f'problem_{problem_id}'
-    if cache_key in cache and (time.time() - cache_timestamp.get(cache_key, 0)) < 1800:
-        return jsonify(cache[cache_key])
-    
-    conn = get_db_connection()
-    if not conn:
-        return jsonify({'error': 'Database connection failed'}), 500
-    
-    try:
-        cursor = conn.cursor(cursor_factory=RealDictCursor)
-        
-        # OPTIMIZED: Single query with JOIN and JSON aggregation (50% faster than 2 queries)
-        cursor.execute("""
-            SELECT 
-                p.id, p.title, p.origin, p.time_limit, p.memory_limit, 
-                p.statement, p.input, p.output, p.constraints, p.note, p.vj_link,
-                COALESCE(json_agg(
-                    json_build_object('input', s.input, 'output', s.output)
-                    ORDER BY s.id
-                ) FILTER (WHERE s.id IS NOT NULL), '[]'::json) as samples_json
-            FROM problems p
-            LEFT JOIN samples s ON p.id = s.problem_id
-            WHERE p.id = %s
-            GROUP BY p.id, p.title, p.origin, p.time_limit, p.memory_limit,
-                     p.statement, p.input, p.output, p.constraints, p.note, p.vj_link
-        """, (problem_id,))
-        
-        result = cursor.fetchone()
-        
-        if not result:
-            cursor.close()
-            return jsonify({'error': 'Problem not found'}), 404
-        
-        # Convert RealDictRow to dict and parse samples
-        problem_dict = dict(result)
-        problem_dict['samples'] = result['samples_json']
-        del problem_dict['samples_json']
-        
-        # Rename fields to camelCase for API consistency
-        problem_dict['timeLimit'] = problem_dict.pop('time_limit')
-        problem_dict['memoryLimit'] = problem_dict.pop('memory_limit')
-        problem_dict['vjLink'] = problem_dict.pop('vj_link')
-        
-        cursor.close()
-        
-        # Cache result
-        cache[cache_key] = problem_dict
-        cache_timestamp[cache_key] = time.time()
-        
-        return jsonify(problem_dict)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-    finally:
-        release_connection(conn)
-
 @app.route('/api/problems/batch', methods=['GET'])
 @timeout(5)  # 5 second timeout
 def get_problems_batch():

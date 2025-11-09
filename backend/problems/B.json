@@ -1,17 +1,17 @@
 {
   "id": "B",
-  "title": "Yet Another Permuation Problem",
+  "title": "Max Mixed Spices",
   "origin": "N/A",
   "timeLimit": "2000ms",
-  "memoryLimit": "256MB",
-  "statement": "The Coders Cup begins on Monday! Now, the head of Competitive Programming, Mr. Taaha, wants to make a seating arrangement for all the teams. To keep the CP vibe alive even here, he decides that the arrangement should follow a very mathematical pattern.<br><br>There are <em>n</em> teams numbered from <em>1</em> to <em>n</em>, and seats are also numbered from <em>1</em> to <em>n</em>. Mr. Taaha wants to arrange the teams in such a way that the absolute difference between the team’s number and their seat number is exactly <em>k</em>.<br><br>Formally, for every position <em>i</em> (1-indexed), the team sitting at that position should have a number <em>p[i]</em> such that <code>|p[i] - i| = k</code>.<br><br>Among all possible valid seatings, Taaha wants the lexicographically smallest arrangement. If no valid arrangement exists, print <code>-1</code>.<br><br>Your task is to help him find this special seating plan so the Coders Cup can begin in perfect CP symmetry!",
-"input": "The first line contains an integer <em>t</em> — the number of test cases (<code>1 ≤ t ≤ 10</code>). Each of the next <em>t</em> lines contains two space-separated integers <em>n</em> and <em>k</em> (<code>1 ≤ n ≤ 10<sup>5</sup></code>, <code>0 ≤ k ≤ n</code>).",
-  "output": "If a seating plan does not exist, print -1, otherwise print <em>n</em> space-separated integers representing the lexicographically smallest valid arrangement.",
+  "memoryLimit": "512MB",
+  "statement": "When cooking, using a mix of spices enhances the flavor more than using only one type of spice. Mixed spice is a seasoning made by mixing several spices in a predetermined ratio.<br><br>You are trying to make as large a quantity of mixed spices as possible by purchasing a couple of different spices as your budget allows. You already have some of the spices on hand. In addition, you can buy as many spices as you want, as long as the total cost of the spices purchased does not exceed your budget. With the spices you have collected, determine the maximum number of grams of mixed spices that can be made.<br><br>The minimum unit for purchasing spices is one gram, and the minimum unit for each spice that can be used when mixing spices is also one gram.",
+  "input": "The first line contains two integers <em>N</em> and <em>C</em> — the number of spice types and your budget (<code>2 ≤ N ≤ 100</code>, <code>0 ≤ C ≤ 10<sup>10</sup></code>).<br><br>The next <em>N</em> lines each contain an integer <em>a<sub>i</sub></em> — the price per gram of the <em>i</em>-th spice (<code>1 ≤ a<sub>i</sub> ≤ 10000</code>).<br><br>The next <em>N</em> lines each contain an integer <em>b<sub>i</sub></em> — the quantity (in grams) of the <em>i</em>-th spice you already have (<code>0 ≤ b<sub>i</sub> ≤ 10000</code>).<br><br>The final <em>N</em> lines each contain an integer <em>x<sub>i</sub></em> — representing the mixing ratio of the <em>i</em>-th spice (<code>1 ≤ x<sub>i</sub> ≤ 10000</code>).<br><br>It is guaranteed that <code>gcd(x₁, x₂, …, x<sub>N</sub>) = 1</code>.",
+  "output": "Print a single integer — the maximum amount of mixed spices that can be made, in grams.",
   "samples": [
     {
-      "input": "3\n2 1\n3 0\n3 2",
-      "output": "2 1\n1 2 3\n-1"
+      "input": "2 100\n2\n8\n5\n5\n1\n1\n",
+      "output": "30\n"
     }
   ],
-  "vj_link": "https://vjudge.net/contest/764956#problem/B"
+  "vj_link": "https://vjudge.net/contest/765290#problem/B"
 }

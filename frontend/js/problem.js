@@ -217,74 +217,28 @@ function loadProblem(problemId) {
         return;  // ← EARLY EXIT: NO SPINNER SHOWN ✨
     }
     
-    // Not in cache - will need API call
-    // Show spinner only if fetch takes >200ms
-    let spinnerTimeout = setTimeout(() => {
-        console.log('⏳ Fetch taking >200ms, showing spinner');
-        showLoading(true);
-    }, 200);
+    // Problem not in cache - show loading and wait for batch preload to complete
+    console.log(`⏳ Problem ${problemId} not yet cached, waiting for batch preload...`);
+    showLoading(true);
     
-    const problem = allProblems.find(p => p.id === problemId);
-    if (!problem) {
-        clearTimeout(spinnerTimeout);
-        console.error(`Problem ${problemId} not found in`, allProblems);
-        showError(`Problem ${problemId} not found.`);
-        return;
-    }
-    
-    // ✅ OPTIMIZED: Parallel timer + problem fetch (both at same time)
-    // Run timer check and problem fetch in PARALLEL instead of sequential
-    // This saves 100-200ms by not waiting for timer check before fetching problem
-    Promise.all([
-        checkContestStatusSmart(),  // ✅ Use smart caching (skip API if <5s old)
-        fetch(`${API_URL}/problems/${problemId}`)  // Start problem fetch at same time
-            .then(response => {
-                if (!response.ok) throw new Error(`Failed to fetch problem ${problemId}`);
-                return response.json();
-            })
-    ]).then(([timerResult, fullProblem]) => {
-        // Both completed successfully
-        console.log(`✓ Timer synced: ${localRemainingTime}s remaining (parallel load)`);
-        
-        // Double-check cache (might have been populated elsewhere)
+    // Wait for batch preload with timeout (max 2 seconds)
+    const waitStart = Date.now();
+    const checkCache = setInterval(() => {
         if (problemCache[problemId]) {
-            console.log(`✓ Problem ${problemId} now in cache, using cached version`);
-            clearTimeout(spinnerTimeout);
+            clearInterval(checkCache);
+            console.log(`✓ Problem ${problemId} now in cache after batch preload`);
             currentProblem = problemCache[problemId];
-            displayProblem(currentProblem);
             updateActiveNavLink(problemId);
-            showLoading(false);
-            return;
-        }
-        
-        // Cache and display the problem
-        problemCache[problemId] = fullProblem;
-        currentProblem = fullProblem;
-        displayProblem(fullProblem);
-        updateActiveNavLink(problemId);
-        
-        clearTimeout(spinnerTimeout);
-        showLoading(false);
-        console.log(`✓ Fetched and cached problem ${problemId} (parallel: 50% faster)`);
-    }).catch(error => {
-        console.error(`Error loading problem ${problemId}:`, error);
-        
-        // Check cache as fallback (at least show something)
-        if (problemCache[problemId]) {
-            console.log(`✓ Using cached problem ${problemId} (fetch failed, fallback)`);
-            clearTimeout(spinnerTimeout);
-            currentProblem = problemCache[problemId];
             displayProblem(currentProblem);
-            updateActiveNavLink(problemId);
             showLoading(false);
-            return;
+        } else if (Date.now() - waitStart > 2000) {
+            // Timeout - show error
+            clearInterval(checkCache);
+            console.error(`Problem ${problemId} not found after 2s timeout`);
+            showError(`Problem ${problemId} not found.`);
+            showLoading(false);
         }
-        
-        // No cache available and fetch failed
-        showError(`Failed to load problem. ${error.message}`);
-        clearTimeout(spinnerTimeout);
-        showLoading(false);
-    });
+    }, 50);
 }
 
 // Display problem content

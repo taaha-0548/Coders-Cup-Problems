@@ -1,17 +1,17 @@
 {
   "id": "C",
-  "title": "Yet Another Grid Problem",
+  "title": "Student Dormitory Parties",
   "origin": "N/A",
   "timeLimit": "2000ms",
-  "memoryLimit": "256MB",
-  "statement": "After the recent rain, almost all of Karachi was flooded. Thankfully, some land was still left dry. Due to the internet being cut off, Vali could not load Codeforces, so he decided to make a problem of his own (totally original!).\n\nHe represented the city as a 2D grid with <em>N</em> rows and <em>M</em> columns, where each cell is either flooded ('W') or dry ('.'). Vali wants to count how many <strong>ponds</strong> have formed in the city. A pond is defined as a connected set of water cells where two cells are considered connected if they touch horizontally, vertically, or diagonally.\n\nHelp Vali count all the ponds so he can report back to the residents how many isolated water pools are left in the city.",
-  "input": "The first line contains two space-separated integers <em>N</em> and <em>M</em> (<code>1 ≤ N, M ≤ 100</code>). Each of the next <em>N</em> lines contains <em>M</em> characters, each either 'W' or '.' representing one row of the city grid.",
-  "output": "Print a single integer — the number of ponds in the city.",
+  "memoryLimit": "512MB",
+  "statement": "A new student dormitory has just been built! It consists of <em>M</em> buildings, numbered from 1 to <em>M</em>. Initially, the dormitory is empty, but soon <em>N</em> students will move in — one student per day.<br><br>Each time a student moves into a building, a big party is held inside that building. The noise produced by the party equals the total number of students currently living in that building. The dormitory manager dislikes noise, so occasionally they may decide to completely clear a building to keep the noise level reasonable. When they clear a building, all students living in that building are moved out permanently. The manager can perform this operation on any day, but doing it more than <em>K</em> times is not worthwhile.<br><br>Your task is to help the manager minimize the total noise produced by all parties. Given the sequence of student arrivals, find the minimum possible total noise that can be achieved if the manager can clear buildings at most <em>K</em> times in total.",
+  "input": "The first line contains three integers <em>N</em>, <em>M</em>, and <em>K</em> — the number of students, the number of buildings, and the maximum number of times the manager can clear a building (<code>1 ≤ N ≤ 1000</code>, <code>1 ≤ M ≤ 100</code>, <code>0 ≤ K ≤ 10</code>).<br><br>The next <em>N</em> lines each contain an integer between 1 and <em>M</em>, where the <em>i</em>-th line represents the building number that the student on day <em>i</em> moves into.",
+  "output": "Print a single integer — the minimum possible total noise that can be achieved.",
   "samples": [
     {
-      "input": "10 12\nW........WW.\n.WWW.....WWW\n....WW...WW.\n.........WW.\n.........W..\n..W......W..\n.W.W.....WW.\nW.W.W.....W.\n.W.W......W.\n..W.......W.",
-      "output": "3"
+      "input": "5 1 2\n1\n1\n1\n1\n1\n",
+      "output": "7\n"
     }
   ],
-  "vj_link": "https://vjudge.net/contest/764956#problem/C"
+  "vj_link": "https://vjudge.net/contest/765290#problem/C"
 }
