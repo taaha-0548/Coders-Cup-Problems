@@ -151,10 +151,34 @@ async function loadAllProblems() {
 function loadProblem(problemId) {
     console.log('Loading problem:', problemId);
     console.log('Available problems:', allProblems.map(p => p.id));
-    showLoading(true);
+    
+    // Check cache FIRST before showing spinner
+    if (problemCache[problemId]) {
+        console.log(`✓ Using cached problem ${problemId} - instant display`);
+        currentProblem = problemCache[problemId];
+        updateActiveNavLink(problemId);
+        
+        // Display instantly (no loading overlay)
+        displayProblem(currentProblem);
+        
+        // Sync timer in background (non-blocking)
+        checkContestStatusOnce().catch(error => {
+            console.error('Background timer sync failed:', error);
+        });
+        
+        return;  // ← EARLY EXIT: NO SPINNER SHOWN ✨
+    }
+    
+    // Not in cache - will need API call
+    // Show spinner only if fetch takes >200ms
+    let spinnerTimeout = setTimeout(() => {
+        console.log('⏳ Fetch taking >200ms, showing spinner');
+        showLoading(true);
+    }, 200);
     
     const problem = allProblems.find(p => p.id === problemId);
     if (!problem) {
+        clearTimeout(spinnerTimeout);
         console.error(`Problem ${problemId} not found in`, allProblems);
         showError(`Problem ${problemId} not found.`);
         return;
@@ -165,9 +189,10 @@ function loadProblem(problemId) {
         // Timer is now synced with server
         console.log(`Timer synced: ${localRemainingTime}s remaining`);
         
-        // Check if problem is already cached and fresh
+        // Double-check cache (might have been populated elsewhere)
         if (problemCache[problemId]) {
-            console.log(`Using cached problem ${problemId}`);
+            console.log(`✓ Problem ${problemId} now in cache, using cached version`);
+            clearTimeout(spinnerTimeout);
             currentProblem = problemCache[problemId];
             displayProblem(currentProblem);
             updateActiveNavLink(problemId);
@@ -187,12 +212,16 @@ function loadProblem(problemId) {
                 currentProblem = fullProblem;
                 displayProblem(fullProblem);
                 updateActiveNavLink(problemId);
+                
+                clearTimeout(spinnerTimeout);
                 showLoading(false);
-                console.log(`Fetched and cached problem ${problemId}`);
+                console.log(`✓ Fetched and cached problem ${problemId}`);
             })
             .catch(error => {
                 console.error(`Error loading problem ${problemId}:`, error);
                 showError(`Failed to load problem. ${error.message}`);
+                
+                clearTimeout(spinnerTimeout);
                 showLoading(false);
             });
     }).catch(error => {
@@ -201,7 +230,8 @@ function loadProblem(problemId) {
         
         // Check cache first
         if (problemCache[problemId]) {
-            console.log(`Using cached problem ${problemId} (timer sync failed)`);
+            console.log(`✓ Using cached problem ${problemId} (timer sync failed)`);
+            clearTimeout(spinnerTimeout);
             currentProblem = problemCache[problemId];
             displayProblem(currentProblem);
             updateActiveNavLink(problemId);
@@ -220,12 +250,16 @@ function loadProblem(problemId) {
                 currentProblem = fullProblem;
                 displayProblem(fullProblem);
                 updateActiveNavLink(problemId);
+                
+                clearTimeout(spinnerTimeout);
                 showLoading(false);
-                console.log(`Fetched and cached problem ${problemId}`);
+                console.log(`✓ Fetched and cached problem ${problemId}`);
             })
             .catch(err => {
                 console.error(`Error loading problem ${problemId}:`, err);
                 showError(`Failed to load problem. ${err.message}`);
+                
+                clearTimeout(spinnerTimeout);
                 showLoading(false);
             });
     });
