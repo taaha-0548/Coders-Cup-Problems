@@ -18,23 +18,18 @@ const submitBtn = document.getElementById('submit-btn');
 const pageTitle = document.getElementById('page-title');
 
 // Initialize the application
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     const urlParams = new URLSearchParams(window.location.search);
     const problemId = urlParams.get('id') || 'A';
     
     // ✅ STATIC: No contest status checking - just load problems directly
     // Load all problems once and cache them
-    loadAllProblems().then(() => {
-        loadProblem(problemId);
-        setupProblemNavigation();
-        initializeAnimations();
-        
-        // ✅ After displaying first problem, batch fetch ALL remaining problems
-        // This preloads them for instant switching later
-        setTimeout(() => {
-            batchPreloadAllProblems(problemId);
-        }, 100);  // Small delay to let UI render first
-    });
+    await loadAllProblems();
+    await batchPreloadAllProblems(problemId);
+    
+    loadProblem(problemId);
+    setupProblemNavigation();
+    initializeAnimations();
 });
 
 // Initialize animations and interactions
@@ -83,6 +78,8 @@ async function loadAllProblems() {
                 if (response.ok) {
                     const problem = await response.json();
                     allProblems.push(problem);
+                    // Cache immediately as we load
+                    problemCache[problem.id] = problem;
                 }
             } catch (error) {
                 // Continue loading other problems
@@ -98,7 +95,7 @@ async function loadAllProblems() {
 async function batchPreloadAllProblems(currentProblemId) {
     try {
         // All problems are already loaded by loadAllProblems()
-        // Just cache them if not already cached
+        // Ensure all are cached
         allProblems.forEach(problem => {
             if (!problemCache[problem.id]) {
                 problemCache[problem.id] = problem;
