@@ -155,6 +155,39 @@ body {
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
+.header-social {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.social-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.social-link:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+.linkedin-link:hover {
+    background: #0A66C2;
+}
+
+.social-icon {
+    width: 20px;
+    height: 20px;
+}
+
 .contest-title:hover h1 {
     color: rgba(255, 255, 255, 0.9);
     text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
@@ -291,6 +324,16 @@ body {
     font-family: var(--font-montserrat);
     letter-spacing: 0.5px;
     color: #8B0000;
+}
+
+.hero-subtitle {
+    font-size: 1rem;
+    font-weight: 500;
+    margin: 8px 0 0 0;
+    color: #DC143C;
+    font-family: var(--font-cascadia);
+    letter-spacing: 1px;
+    text-transform: uppercase;
 }
 
 /* Main Content */

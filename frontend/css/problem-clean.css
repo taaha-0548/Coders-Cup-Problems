@@ -156,6 +156,39 @@ body {
     text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
 }
 
+.header-social {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.social-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.social-link:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+.linkedin-link:hover {
+    background: #0A66C2;
+}
+
+.social-icon {
+    width: 20px;
+    height: 20px;
+}
+
 .contest-meta {
     display: flex;
     gap: 20px;
