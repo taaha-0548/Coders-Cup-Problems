@@ -118,9 +118,9 @@ def api_info():
 @app.route('/api/problems', methods=['GET'])
 @timeout(5)  # 5 second timeout
 def get_all_problems():
-    """Get all problems (without samples for list view) - CACHED for 90 mins"""
-    # Check cache (valid for 90 minutes = 5400 seconds)
-    if 'all_problems' in cache and (time.time() - cache_timestamp.get('all_problems', 0)) < 5400:
+    """Get all problems (without samples for list view) - CACHED for 30 mins"""
+    # Check cache (valid for 30 minutes = 1800 seconds)
+    if 'all_problems' in cache and (time.time() - cache_timestamp.get('all_problems', 0)) < 1800:
         return jsonify(cache['all_problems'])
     
     conn = get_db_connection()
@@ -147,9 +147,9 @@ def get_all_problems():
 @timeout(5)  # 5 second timeout
 def get_problem(problem_id):
     """Get a specific problem with samples - OPTIMIZED with single query JOIN"""
-    # Check cache first (valid for 90 minutes)
+    # Check cache first (valid for 30 minutes)
     cache_key = f'problem_{problem_id}'
-    if cache_key in cache and (time.time() - cache_timestamp.get(cache_key, 0)) < 5400:
+    if cache_key in cache and (time.time() - cache_timestamp.get(cache_key, 0)) < 1800:
         return jsonify(cache[cache_key])
     
     conn = get_db_connection()
