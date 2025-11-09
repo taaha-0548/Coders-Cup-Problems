@@ -4,7 +4,6 @@ let allProblems = [];
 let problemCache = {};  // Cache individual problems for fast switching
 
 // DOM elements
-const loadingOverlay = document.getElementById('loading-overlay');
 const problemTitle = document.getElementById('problem-title');
 const problemStatement = document.getElementById('problem-statement');
 const problemInput = document.getElementById('problem-input');
@@ -330,7 +329,6 @@ function showError(message) {
             </div>
         `;
     }
-    showLoading(false);
 }
 
 // Show toast notification

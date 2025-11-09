@@ -71,12 +71,14 @@ function togglePasswordVisibility() {
 
 // Global variables
 let allProblems = [];
+let currentTab = 'instructions'; // Track current tab
+let lastProblemsUpdateTime = 0;  // Track last update time
 
 // API URL - dynamically set based on current domain
 // (Already defined above in password section)
 
 // DOM elements
-const problemsTbody = document.getElementById('problems-tbody');
+const problemsTbody = null;  // Will be set dynamically when table is created
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
@@ -290,51 +292,6 @@ function showError(message) {
     }
 }
 
-// Navigation tab handlers
-document.addEventListener('DOMContentLoaded', function() {
-    const navTabs = document.querySelectorAll('.nav-tab');
-    
-    navTabs.forEach(tab => {
-        tab.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            // Remove active class from all tabs
-            navTabs.forEach(t => t.classList.remove('active'));
-            
-            // Add active class to clicked tab
-            this.classList.add('active');
-            
-            // Handle different tab actions
-            const tabText = this.textContent.toLowerCase();
-            switch(tabText) {
-                case 'instructions':
-                    // Show instructions content and update URL
-                    showInstructions();
-                    window.history.pushState({tab: 'instructions'}, '', '?tab=instructions');
-                    break;
-                case 'problem':
-                    // Show problems table and update URL
-                    showProblems();
-                    window.history.pushState({tab: 'problems'}, '', '?tab=problems');
-                    break;
-            }
-        });
-    });
-    
-    // Handle browser back/forward buttons
-    window.addEventListener('popstate', function(e) {
-        if (e.state && e.state.tab) {
-            if (e.state.tab === 'instructions') {
-                showInstructions();
-                setActiveTab('instructions');
-            } else {
-                showProblems();
-                setActiveTab('problems');
-            }
-        }
-    });
-});
-
 // Show instructions content
 function showInstructions() {
     const container = document.querySelector('#main-container');
@@ -417,9 +374,6 @@ function displayProblemsTable() {
 
 
 // Display problems from JSON
-
-let currentTab = 'instructions'; // Track current tab
-
 
 // Update current tab when user navigates
 function setCurrentTab(tabName) {
