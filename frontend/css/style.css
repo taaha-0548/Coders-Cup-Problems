@@ -1045,26 +1045,6 @@ body {
     background: #c0392b;
 }
 
-.loading-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(255, 255, 255, 0.9);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2000;
-}
-
-.loading-content {
-    text-align: center;
-    color: #7f8c8d;
-}
-
-
-
 .examples-table {
     width: 100%;
     border-collapse: collapse;
@@ -1159,68 +1139,6 @@ body {
     line-height: 1.7;
     color: #555;
     margin-bottom: 10px;
-}
-
-/* Loading Overlay Spinner */
-.loading-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-    animation: fadeIn 0.3s ease-out;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-.loading-content {
-    background: white;
-    border: 1px solid rgba(207, 237, 255, 0.5);
-    border-radius: 16px;
-    padding: 30px;
-    font-size: 16px;
-    font-weight: 500;
-    color: var(--color-primaryblue);
-    font-family: var(--font-cascadia);
-    box-shadow: 0 8px 32px rgba(11, 70, 109, 0.15);
-    text-align: center;
-    animation: slideInScale 0.5s ease-out;
-}
-
-@keyframes slideInScale {
-    from {
-        opacity: 0;
-        transform: scale(0.8) translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-    }
-}
-
-.loading-content::after {
-    content: '';
-    display: block;
-    width: 24px;
-    height: 24px;
-    border: 3px solid rgba(11, 70, 109, 0.3);
-    border-radius: 50%;
-    border-top-color: var(--color-primaryblue);
-    animation: spin 1s linear infinite;
-    margin: 15px auto 0;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
 }
 
 /* Password Modal Styles */

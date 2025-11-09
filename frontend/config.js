@@ -41,13 +41,10 @@ async function loadEnv() {
         }
         
         if (!response) {
-            console.warn('⚠ .env file not found in any location, using default passwords');
-            console.log('Paths tried:', paths);
             return;
         }
         
         const envText = await response.text();
-        console.log(`✓ .env file found at: ${successPath}`);
         const lines = envText.split('\n');
         
         lines.forEach(line => {
@@ -58,20 +55,16 @@ async function loadEnv() {
                 
                 if (key.trim() === 'CONTEST_PASSWORD') {
                     CONFIG.CONTEST_PASSWORD = value;
-                    console.log('✓ CONTEST_PASSWORD loaded from .env:', value);
                 }
                 if (key.trim() === 'ADMIN_PASSWORD') {
                     CONFIG.ADMIN_PASSWORD = value;
-                    console.log('✓ ADMIN_PASSWORD loaded from .env:', value);
                 }
             }
         });
         
-        console.log('✓ CONFIG initialized:', CONFIG);
         CONFIG.LOADED = true;
         window.resolveConfig();
     } catch (error) {
-        console.warn('⚠ Could not load .env file:', error.message);
         CONFIG.LOADED = true;
         window.resolveConfig();
     }
@@ -83,12 +76,4 @@ if (document.readyState === 'loading') {
 } else {
     loadEnv();
 }
-
-// Log CONFIG after a small delay to ensure it's loaded
-setTimeout(() => {
-    console.log('=== FINAL CONFIG STATE ===');
-    console.log('CONTEST_PASSWORD:', CONFIG.CONTEST_PASSWORD);
-    console.log('ADMIN_PASSWORD:', CONFIG.ADMIN_PASSWORD);
-    console.log('========================');
-}, 500);
 
