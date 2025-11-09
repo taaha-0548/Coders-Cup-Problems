@@ -466,6 +466,8 @@ function showInstructions() {
                     <li>Problem C: 1 point</li>
                     <li>Problem D: 1 point</li>
                     <li>Problem E: 1 point</li>
+                    <li>Problem F: 1 point</li>
+                    <li>Problem G: 1 point</li>
                 </ul>
             </div>
             
