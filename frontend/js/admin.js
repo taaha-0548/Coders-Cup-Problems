@@ -1,36 +1,10 @@
-// Admin Panel JavaScript
-const API_URL = window.location.origin + '/api';
-
+// Admin Panel JavaScript - Static Version
 let isLoggedIn = false;
-let adminToken = null;  // Store the token after login
 let editingProblemId = null;
 let sampleCount = 0;
-let currentContestStatus = null; // Store current contest status for auto-reset logic
 
-// Timer countdown variables
-let adminTimerInterval = null;
-let adminLocalRemainingTime = 0;
-let lastUpdateCheck = 0;  // Track last-update timestamp for smart polling
-let updateCheckInterval = null;  // Poll for updates every 10 seconds
-
-// Broadcast contest state changes to all tabs/windows
-function broadcastContestStateChange(action) {
-    // Use localStorage to notify other tabs/windows
-    const event = {
-        type: 'contestStateChange',
-        action: action,  // 'started', 'stopped', 'scheduled', 'reset', etc.
-        source: 'admin',  // Mark that this is from the admin panel
-        timestamp: Date.now()
-    };
-    
-    // Broadcast via localStorage
-    localStorage.setItem('contestStateChange', JSON.stringify(event));
-    
-    // Also clear it after a short delay so it can be triggered again
-    setTimeout(() => {
-        localStorage.removeItem('contestStateChange');
-    }, 100);
-}
+// Local problems data storage (from JSON files)
+let allProblems = {};
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
@@ -41,17 +15,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Check if user is already logged in
 function checkLoginStatus() {
-    const sessionToken = sessionStorage.getItem('adminToken');
-    if (sessionToken) {
-        adminToken = sessionToken;
+    const isAdmin = sessionStorage.getItem('adminLoggedIn');
+    if (isAdmin === 'true') {
         isLoggedIn = true;
         showAdminPanel();
         loadProblemsForManagement();
-        
-        // Set up smart polling: Check for updates every 10 seconds (lightweight)
-        if (!updateCheckInterval) {
-            updateCheckInterval = setInterval(checkForUpdates, 10000);
-        }
     }
 }
 
@@ -60,34 +28,39 @@ async function loginAdmin() {
     const password = document.getElementById('adminPassword').value;
     
     if (!password) {
-        alert('Please enter a password');
+        showMessage('error', 'Please enter a password', 'loginMessage');
         return;
     }
     
     try {
-        // Validate password with backend before logging in
-        const response = await fetch(`${API_URL}/admin/login`, {
-            method: 'POST',
-            headers: {
-                'X-Admin-Token': password
-            }
-        });
+        // ⚠️ IMPORTANT: Wait for config to load from .env
+        await configReady;
         
-        // If backend accepts the token, proceed
-        if (response.ok) {
-            adminToken = password;
-            sessionStorage.setItem('adminToken', password);
+        // Debug logging
+        console.log('=== ADMIN LOGIN DEBUG ===');
+        console.log('Input password:', password);
+        console.log('CONFIG.ADMIN_PASSWORD:', CONFIG.ADMIN_PASSWORD);
+        console.log('Match:', password === CONFIG.ADMIN_PASSWORD);
+        console.log('==========================');
+        
+        // Check password from CONFIG (loaded from .env)
+        if (password === CONFIG.ADMIN_PASSWORD) {
+            console.log('✓ Admin password correct');
+            sessionStorage.setItem('adminLoggedIn', 'true');
             isLoggedIn = true;
             showAdminPanel();
             loadProblemsForManagement();
             document.getElementById('adminPassword').value = '';
             showMessage('success', 'Login successful!', 'loginMessage');
         } else {
+            console.warn('✗ Admin password mismatch!');
+            console.warn(`Expected: "${CONFIG.ADMIN_PASSWORD}"`);
+            console.warn(`Got: "${password}"`);
             showMessage('error', 'Invalid password!', 'loginMessage');
             document.getElementById('adminPassword').value = '';
         }
     } catch (error) {
-        showMessage('error', 'Connection error. Please try again.', 'loginMessage');
+        showMessage('error', 'Error: ' + error.message, 'loginMessage');
         console.error('Login error:', error);
     }
 }
@@ -95,8 +68,7 @@ async function loginAdmin() {
 // Logout function
 function logoutAdmin() {
     if (confirm('Are you sure you want to logout?')) {
-        sessionStorage.removeItem('adminToken');
-        adminToken = null;
+        sessionStorage.removeItem('adminLoggedIn');
         isLoggedIn = false;
         document.getElementById('loginForm').style.display = 'block';
         document.getElementById('adminPanel').style.display = 'none';
@@ -108,8 +80,6 @@ function logoutAdmin() {
 function showAdminPanel() {
     document.getElementById('loginForm').style.display = 'none';
     document.getElementById('adminPanel').style.display = 'block';
-    // Load contest status when admin panel is shown
-    loadContestStatus();
     
     // Set up JSON file upload handler
     const jsonFileInput = document.getElementById('jsonFileUpload');
@@ -236,7 +206,7 @@ function removeSample(sampleId) {
     }
 }
 
-// Save problem (add or update)
+// Save problem to local JSON files
 async function saveProblem() {
     if (!isLoggedIn) {
         showMessage('error', 'You must be logged in!', 'message');
@@ -255,7 +225,7 @@ async function saveProblem() {
     const note = document.getElementById('problemNote').value.trim();
     const vjLink = document.getElementById('problemVjLink').value.trim();
     
-    // Validation - constraints is now optional
+    // Validation
     if (!problemId || !title || !statement || !input || !output || !vjLink) {
         showMessage('error', 'Please fill in all required fields!', 'message');
         return;
@@ -299,26 +269,32 @@ async function saveProblem() {
     try {
         showMessage('info', 'Saving problem...', 'message');
         
-        const endpoint = editingProblemId ? `/admin/problems/${problemId}` : '/admin/problems';
-        const method = editingProblemId ? 'PUT' : 'POST';
+        // Store in local memory/localStorage
+        allProblems[problemId] = problemData;
         
-        const response = await fetch(`${API_URL}${endpoint}`, {
-            method,
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Admin-Token': adminToken
-            },
-            body: JSON.stringify(problemData)
-        });
+        // Save to localStorage for persistence
+        localStorage.setItem(`problem_${problemId}`, JSON.stringify(problemData));
         
-        if (!response.ok) {
-            throw new Error(`API error: ${response.status}`);
-        }
+        // Also update the main problems list
+        updateProblemsDirectory();
         
         showMessage('success', editingProblemId ? 'Problem updated successfully!' : 'Problem added successfully!', 'message');
+        
+        // Generate download link for JSON file
+        const jsonText = JSON.stringify(problemData, null, 2);
+        const blob = new Blob([jsonText], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${problemId}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        showMessage('success', `Problem saved! JSON file downloaded. Replace ${problemId}.json in frontend/problems/`, 'message');
+        
         resetForm();
         editingProblemId = null;
-        setTimeout(() => loadProblemsForManagement(), 1000);
+        setTimeout(() => loadProblemsForManagement(), 500);
         
     } catch (error) {
         console.error('Error saving problem:', error);
@@ -326,14 +302,44 @@ async function saveProblem() {
     }
 }
 
-// Load problems for management
+// Load problems from local JSON files
 async function loadProblemsForManagement() {
     try {
-        const response = await fetch(`${API_URL}/problems`);
-        if (!response.ok) throw new Error('Failed to load problems');
+        // Clear existing
+        allProblems = {};
         
-        const problems = await response.json();
-        displayProblemsTable(problems);
+        // Load all problems from frontend/problems directory
+        const problemIds = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+        
+        for (const id of problemIds) {
+            try {
+                const response = await fetch(`./problems/${id}.json`);
+                if (response.ok) {
+                    const data = await response.json();
+                    allProblems[id] = data;
+                } else {
+                    // Problem file doesn't exist yet
+                    console.log(`Problem ${id}.json not found`);
+                }
+            } catch (error) {
+                console.log(`Error loading ${id}.json:`, error);
+            }
+        }
+        
+        // Also load from localStorage (saved via admin panel)
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key.startsWith('problem_')) {
+                try {
+                    const data = JSON.parse(localStorage.getItem(key));
+                    allProblems[data.id] = data;
+                } catch (error) {
+                    console.error('Error parsing stored problem:', error);
+                }
+            }
+        }
+        
+        displayProblemsTable(Object.values(allProblems).sort((a, b) => a.id.localeCompare(b.id)));
         
     } catch (error) {
         console.error('Error loading problems:', error);
@@ -347,7 +353,7 @@ function displayProblemsTable(problems) {
     const container = document.getElementById('problemsTableContainer');
     
     if (problems.length === 0) {
-        container.innerHTML = '<p>No problems found.</p>';
+        container.innerHTML = '<p style="padding: 20px;">No problems found. Create one to get started!</p>';
         container.classList.remove('loading');
         return;
     }
@@ -373,8 +379,8 @@ function displayProblemsTable(problems) {
                 <td><strong>${problem.id}</strong></td>
                 <td>${problem.title}</td>
                 <td>${problem.origin || '-'}</td>
-                <td>${problem.time_limit || '-'}</td>
-                <td>${problem.memory_limit || '-'}</td>
+                <td>${problem.timeLimit || '-'}</td>
+                <td>${problem.memoryLimit || '-'}</td>
                 <td>
                     <button class="btn-edit" onclick="editProblem('${problem.id}')">Edit</button>
                     <button class="btn-delete" onclick="deleteProblem('${problem.id}')">Delete</button>
@@ -397,10 +403,18 @@ async function editProblem(problemId) {
     if (!isLoggedIn) return;
     
     try {
-        const response = await fetch(`${API_URL}/problems/${problemId}`);
-        if (!response.ok) throw new Error('Problem not found');
+        // Try to get from memory first
+        let problem = allProblems[problemId];
         
-        const problem = await response.json();
+        // If not in memory, try to fetch from JSON file
+        if (!problem) {
+            const response = await fetch(`./problems/${problemId}.json`);
+            if (response.ok) {
+                problem = await response.json();
+            } else {
+                throw new Error('Problem not found');
+            }
+        }
         
         // Fill form with problem data
         document.getElementById('problemId').value = problem.id;
@@ -446,17 +460,14 @@ async function deleteProblem(problemId) {
     }
     
     try {
-        const response = await fetch(`${API_URL}/admin/problems/${problemId}`, {
-            method: 'DELETE',
-            headers: {
-                'X-Admin-Token': adminToken
-            }
-        });
+        // Remove from memory
+        delete allProblems[problemId];
         
-        if (!response.ok) throw new Error(`Failed to delete: ${response.status}`);
+        // Remove from localStorage
+        localStorage.removeItem(`problem_${problemId}`);
         
         showMessage('success', 'Problem deleted successfully!', 'managingMessage');
-        setTimeout(() => loadProblemsForManagement(), 1000);
+        setTimeout(() => loadProblemsForManagement(), 500);
         
     } catch (error) {
         console.error('Error deleting problem:', error);
@@ -494,427 +505,9 @@ function showMessage(type, text, elementId) {
     element.textContent = text;
 }
 
-// ==================== CONTEST TIMER FUNCTIONS ====================
-
-// Load contest status on contest settings tab
-async function loadContestStatus() {
-    try {
-        const response = await fetch(`${API_URL}/contest/status`);
-        
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || `HTTP ${response.status}: Failed to load contest status`);
-        }
-        
-        const contest = await response.json();
-        updateContestUI(contest);
-        
-    } catch (error) {
-        console.error('Error loading contest status:', error);
-        showMessage('error', `Error: ${error.message}`, 'contestMessage');
-    }
-}
-
-// Fast check: Poll the last-update endpoint (very lightweight)
-async function checkForUpdates() {
-    try {
-        const response = await fetch(`${API_URL}/contest/last-update`);
-        if (!response.ok) return;
-        
-        const data = await response.json();
-        
-        // If something changed since we last checked, fetch full status
-        if (data.last_update > lastUpdateCheck) {
-            lastUpdateCheck = data.last_update;
-            loadContestStatus();  // Fetch full status and update UI
-        }
-    } catch (error) {
-        console.error('Error checking for updates:', error);
-    }
-}
-
-function updateContestUI(contest) {
-    // Store the current contest status in global variable for auto-reset logic
-    currentContestStatus = contest;
-    
-    const statusBadge = document.getElementById('contestStatus');
-    const timeDisplay = document.getElementById('timeRemaining');
-    const btnSchedule = document.getElementById('btnSchedule');
-    const btnStartNow = document.getElementById('btnStartNow');
-    const btnStop = document.getElementById('btnStop');
-    const btnAddTime = document.getElementById('btnAddTime');
-    const btnAddPreCountdownTime = document.getElementById('btnAddPreCountdownTime');
-    const btnReset = document.getElementById('btnReset');
-    
-    // Update status
-    statusBadge.textContent = contest.status.toUpperCase();
-    statusBadge.className = `status-badge ${contest.status}`;
-    
-    // Update time display and start countdown if contest is active
-    adminLocalRemainingTime = contest.remaining_time;
-    updateAdminTimerDisplay();
-    
-    // Start countdown if contest is running or pending
-    if (contest.status === 'running' || contest.status === 'pending') {
-        startAdminTimerCountdown();
-    } else {
-        stopAdminTimerCountdown();
-    }
-    
-    // Update button states based on contest status
-    if (contest.status === 'running') {
-        // Contest is running: can add time and stop, but not schedule/start
-        if (btnSchedule) btnSchedule.disabled = true;
-        if (btnStartNow) btnStartNow.disabled = true;
-        if (btnStop) btnStop.disabled = false;
-        if (btnAddTime) btnAddTime.disabled = false;
-        if (btnAddPreCountdownTime) btnAddPreCountdownTime.disabled = true;
-        if (btnReset) btnReset.disabled = false;
-    } else if (contest.status === 'pending') {
-        // Contest is pending: can schedule/start or stop, can add pre-countdown time
-        if (btnSchedule) btnSchedule.disabled = false;
-        if (btnStartNow) btnStartNow.disabled = false;
-        if (btnStop) btnStop.disabled = false;
-        if (btnAddTime) btnAddTime.disabled = true;
-        if (btnAddPreCountdownTime) btnAddPreCountdownTime.disabled = false;
-        if (btnReset) btnReset.disabled = false;
-    } else {
-        // Contest ended: all disabled except reset
-        if (btnSchedule) btnSchedule.disabled = true;
-        if (btnStartNow) btnStartNow.disabled = true;
-        if (btnStop) btnStop.disabled = true;
-        if (btnAddTime) btnAddTime.disabled = true;
-        if (btnReset) btnReset.disabled = false;
-    }
-    
-    // Update visibility checkbox
-    document.getElementById('contestVisibility').checked = contest.is_visible;
-}
-
-// Admin timer countdown functions
-function updateAdminTimerDisplay() {
-    const timeDisplay = document.getElementById('timeRemaining');
-    if (!timeDisplay) return;
-    
-    const hours = Math.floor(adminLocalRemainingTime / 3600);
-    const minutes = Math.floor((adminLocalRemainingTime % 3600) / 60);
-    const seconds = Math.floor(adminLocalRemainingTime % 60);
-    timeDisplay.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-}
-
-function startAdminTimerCountdown() {
-    if (adminTimerInterval) return;  // Already running
-    
-    adminTimerInterval = setInterval(() => {
-        if (adminLocalRemainingTime > 0) {
-            adminLocalRemainingTime -= 0.1;  // Decrease by 100ms
-            updateAdminTimerDisplay();
-        }
-    }, 100);  // Update every 100ms for smooth countdown
-}
-
-function stopAdminTimerCountdown() {
-    if (adminTimerInterval) {
-        clearInterval(adminTimerInterval);
-        adminTimerInterval = null;
-    }
-}
-
-// Add time to contest
-async function addTime() {
-    const minutes = parseInt(document.getElementById('addMinutes').value);
-    
-    if (!minutes || minutes < 1) {
-        showMessage('error', 'Please enter valid minutes', 'contestMessage');
-        return;
-    }
-    
-    try {
-        const response = await fetch(`${API_URL}/admin/contest/add-time`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Admin-Token': adminToken
-            },
-            body: JSON.stringify({ minutes: minutes })
-        });
-        
-        if (!response.ok) throw new Error('Failed to add time');
-        
-        showMessage('success', `Added ${minutes} minutes to contest!`, 'contestMessage');
-        await loadContestStatus();
-        
-        // Notify all participant pages
-        broadcastContestStateChange('timeAdded');
-        
-    } catch (error) {
-        console.error('Error adding time:', error);
-        showMessage('error', `Error: ${error.message}`, 'contestMessage');
-    }
-}
-
-// Add time to pre-countdown phase
-async function addPreCountdownTime() {
-    const minutes = parseInt(document.getElementById('addPreCountdownMinutes').value);
-    
-    if (!minutes || minutes < 1) {
-        showMessage('error', 'Please enter valid minutes', 'contestMessage');
-        return;
-    }
-    
-    try {
-        const response = await fetch(`${API_URL}/admin/contest/add-precountdown-time`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Admin-Token': adminToken
-            },
-            body: JSON.stringify({ minutes: minutes })
-        });
-        
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to add pre-countdown time');
-        }
-        
-        showMessage('success', `Added ${minutes} minutes to pre-countdown!`, 'contestMessage');
-        await loadContestStatus();
-        
-        // Notify all participant pages
-        broadcastContestStateChange('preCountdownExtended');
-        
-    } catch (error) {
-        console.error('Error adding pre-countdown time:', error);
-        showMessage('error', `Error: ${error.message}`, 'contestMessage');
-    }
-}
-
-// Stop contest
-async function stopContest() {
-    if (!confirm('Are you sure you want to stop the contest immediately?')) {
-        return;
-    }
-    
-    try {
-        const response = await fetch(`${API_URL}/admin/contest/stop`, {
-            method: 'POST',
-            headers: {
-                'X-Admin-Token': adminToken
-            }
-        });
-        
-        if (!response.ok) throw new Error('Failed to stop contest');
-        
-        showMessage('success', 'Contest stopped!', 'contestMessage');
-        await loadContestStatus();
-        
-        // Notify all participant pages to refresh
-        broadcastContestStateChange('stopped');
-        
-    } catch (error) {
-        console.error('Error stopping contest:', error);
-        showMessage('error', `Error: ${error.message}`, 'contestMessage');
-    }
-}
-
-// Toggle visibility
-async function toggleVisibility() {
-    const isVisible = document.getElementById('contestVisibility').checked;
-    
-    try {
-        const response = await fetch(`${API_URL}/admin/contest/visibility`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Admin-Token': adminToken
-            },
-            body: JSON.stringify({ is_visible: isVisible })
-        });
-        
-        if (!response.ok) throw new Error('Failed to update visibility');
-        
-        showMessage('success', isVisible ? 'Timer visible to participants' : 'Timer hidden from participants', 'contestMessage');
-        
-    } catch (error) {
-        console.error('Error updating visibility:', error);
-        showMessage('error', `Error: ${error.message}`, 'contestMessage');
-        document.getElementById('contestVisibility').checked = !isVisible; // Revert
-    }
-}
-
-let timerPollingInterval = null;
-
-// Timer polling is not needed on admin panel - status is only loaded on-demand
-// These functions are kept for backward compatibility but not used
-
-// Load contest status when switching to contest settings tab
-function loadContestOnTabSwitch() {
-    // Just load once when switching to the tab, no continuous polling
-    loadContestStatus();
-}
-
-// Schedule contest with pre-contest countdown
-async function scheduleContest() {
-    const countdownMinutes = parseInt(document.getElementById('preContestCountdown').value);
-    const durationMinutes = parseInt(document.getElementById('contestDuration').value);
-    
-    if (!countdownMinutes || countdownMinutes < 1) {
-        showMessage('error', 'Please enter valid countdown time', 'contestMessage');
-        return;
-    }
-    
-    if (!durationMinutes || durationMinutes < 1) {
-        showMessage('error', 'Please enter valid duration', 'contestMessage');
-        return;
-    }
-    
-    try {
-        console.log('Schedule clicked. Current status:', currentContestStatus?.status || 'UNDEFINED');
-        
-        // If contest is ended, reset it first before scheduling new one
-        if (currentContestStatus && currentContestStatus.status === 'ended') {
-            console.log('Contest is ended. Resetting before scheduling new contest...');
-            
-            const resetResponse = await fetch(`${API_URL}/admin/contest/reset`, {
-                method: 'POST',
-                headers: {
-                    'X-Admin-Token': adminToken
-                }
-            });
-            
-            if (!resetResponse.ok) {
-                throw new Error('Failed to reset contest before scheduling');
-            }
-            
-            console.log('Reset successful');
-            
-            // Wait a moment for reset to complete
-            await new Promise(resolve => setTimeout(resolve, 100));
-        }
-        
-        console.log('Now scheduling contest with countdown:', countdownMinutes, 'duration:', durationMinutes);
-        
-        // Now schedule the new contest
-        const response = await fetch(`${API_URL}/admin/contest/schedule`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Admin-Token': adminToken
-            },
-            body: JSON.stringify({
-                countdown_minutes: countdownMinutes,
-                duration_minutes: durationMinutes
-            })
-        });
-        
-        if (!response.ok) throw new Error('Failed to schedule contest');
-        
-        console.log('Schedule successful');
-        
-        showMessage('success', `Contest scheduled! Countdown in ${countdownMinutes}m, then ${durationMinutes}m contest`, 'contestMessage');
-        await loadContestStatus();
-        
-        // Notify all participant pages
-        broadcastContestStateChange('scheduled');
-        
-    } catch (error) {
-        console.error('Error scheduling contest:', error);
-        showMessage('error', `Error: ${error.message}`, 'contestMessage');
-    }
-}
-
-// Start contest immediately (no countdown)
-async function startContestNow() {
-    const duration = parseInt(document.getElementById('quickDuration').value);
-    
-    if (!duration || duration < 1) {
-        showMessage('error', 'Please enter a valid duration', 'contestMessage');
-        return;
-    }
-    
-    try {
-        console.log('Start Now clicked. Current status:', currentContestStatus?.status || 'UNDEFINED');
-        
-        // If contest is ended, reset it first before starting new one
-        if (currentContestStatus && currentContestStatus.status === 'ended') {
-            console.log('Contest is ended. Resetting before starting new contest...');
-            
-            const resetResponse = await fetch(`${API_URL}/admin/contest/reset`, {
-                method: 'POST',
-                headers: {
-                    'X-Admin-Token': adminToken
-                }
-            });
-            
-            if (!resetResponse.ok) {
-                throw new Error('Failed to reset contest before starting');
-            }
-            
-            console.log('Reset successful');
-            
-            // Wait a moment for reset to complete
-            await new Promise(resolve => setTimeout(resolve, 100));
-        }
-        
-        console.log('Now starting contest for', duration, 'minutes');
-        
-        // Now start the new contest
-        const response = await fetch(`${API_URL}/admin/contest/start`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Admin-Token': adminToken
-            },
-            body: JSON.stringify({ duration_minutes: duration })
-        });
-        
-        if (!response.ok) throw new Error('Failed to start contest');
-        
-        console.log('Start successful');
-        
-        showMessage('success', `Contest started immediately for ${duration} minutes!`, 'contestMessage');
-        
-        // Refresh status (once, not continuously)
-        await loadContestStatus();
-        
-        // Notify all participant pages (broadcast the transition, not just a generic 'started')
-        broadcastContestStateChange('countdown-ended');
-        
-    } catch (error) {
-        console.error('Error starting contest:', error);
-        showMessage('error', `Error: ${error.message}`, 'contestMessage');
-    }
-}
-
-// Start contest (original function, now just calls startContestNow)
-async function startContest() {
-    return startContestNow();
-}
-
-// Reset contest
-async function resetContest() {
-    if (!confirm('Reset contest to pending state? This cannot be undone.')) {
-        return;
-    }
-    
-    try {
-        const response = await fetch(`${API_URL}/admin/contest/reset`, {
-            method: 'POST',
-            headers: {
-                'X-Admin-Token': adminToken
-            }
-        });
-        
-        if (!response.ok) throw new Error('Failed to reset contest');
-        
-        showMessage('success', 'Contest reset to pending state', 'contestMessage');
-        await loadContestStatus();
-        
-        // Notify all participant pages
-        broadcastContestStateChange('reset');
-        
-    } catch (error) {
-        console.error('Error resetting contest:', error);
-        showMessage('error', `Error: ${error.message}`, 'contestMessage');
-    }
+// Update problems directory (used to sync saved problems)
+function updateProblemsDirectory() {
+    // In a static setup, we'd need to download the JSON
+    // For now, just store in localStorage
+    console.log('Problems updated. Current problems:', allProblems);
 }

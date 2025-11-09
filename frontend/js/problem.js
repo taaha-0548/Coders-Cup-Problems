@@ -1,38 +1,7 @@
 // Global variables
 let currentProblem = null;
 let allProblems = [];
-let lastContestStatus = null;  // Track previous status to detect transitions
-let statusPollingInterval = null;
-let timerCountdownInterval = null;
-let phaseCheckTimer = null;
-let localRemainingTime = 0;
-let lastUpdateCheck = 0;  // Track last-update timestamp for smart polling
-let updateCheckInterval = null;  // Poll for updates every 5 seconds
-let problemCache = {};  // Cache individual problems with timestamps
-let problemCacheVersion = 0;  // Track cache version for invalidation
-
-// ✅ Smart status caching variables
-let lastStatusCheckTime = 0;
-const STATUS_CHECK_INTERVAL = 5000;  // Cache status for 5 seconds
-
-// API URL - dynamically set based on current domain
-const API_URL = window.location.origin + '/api';
-
-// Broadcast contest state changes to other tabs/windows
-function broadcastContestStateChange(action, source = 'problem-page') {
-    const event = {
-        type: 'contestStateChange',
-        action: action,
-        source: source,
-        timestamp: Date.now()
-    };
-    
-    localStorage.setItem('contestStateChange', JSON.stringify(event));
-    
-    setTimeout(() => {
-        localStorage.removeItem('contestStateChange');
-    }, 100);
-}
+let problemCache = {};  // Cache individual problems for fast switching
 
 // DOM elements
 const loadingOverlay = document.getElementById('loading-overlay');
@@ -53,56 +22,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const urlParams = new URLSearchParams(window.location.search);
     const problemId = urlParams.get('id') || 'A';
     
-    // Initialize contest status and timer
-    checkContestStatus().then(contest => {
-        // Only allow access if contest is running
-        if (contest && contest.status !== 'running') {
-            // Block access - redirect to index
-            showAccessDenied(contest);
-            return;  // Don't load problem
-        }
+    // ✅ STATIC: No contest status checking - just load problems directly
+    // Load all problems once and cache them
+    loadAllProblems().then(() => {
+        loadProblem(problemId);
+        setupProblemNavigation();
+        initializeAnimations();
         
-        // Contest is running - proceed with loading
-        // Load all problems once and cache them
-        loadAllProblems().then(() => {
-            loadProblem(problemId);
-            setupProblemNavigation();
-            initializeAnimations();
-            
-            // ✅ After displaying first problem, batch fetch ALL remaining problems
-            // This preloads them for instant switching later
-            setTimeout(() => {
-                batchPreloadAllProblems(problemId);
-            }, 100);  // Small delay to let UI render first
-        });
-    });
-    
-    // Define reusable storage event handler
-    window.handleStorageEvent = function(e) {
-        if (e.key === 'contestStateChange') {
-            try {
-                const event = JSON.parse(e.newValue);
-                if (event && event.type === 'contestStateChange') {
-                    console.log(`Received broadcast from ${event.source}: ${event.action}`);
-                    // Store the source to avoid re-broadcasting external transitions
-                    window.lastBroadcastSource = event.source;
-                    // Immediately refresh contest status (but don't re-broadcast if from admin)
-                    checkContestStatusOnce();
-                }
-            } catch (err) {
-                console.error('Error parsing broadcast event:', err);
-            }
-        }
-    };
-    
-    // Listen for broadcast events from admin or other tabs
-    window.addEventListener('storage', window.handleStorageEvent);
-    
-    // Cleanup on page unload to prevent memory leaks
-    window.addEventListener('beforeunload', function() {
-        window.removeEventListener('storage', window.handleStorageEvent);
-        if (updateCheckInterval) clearInterval(updateCheckInterval);
-        if (timerCountdownInterval) clearInterval(timerCountdownInterval);
+        // ✅ After displaying first problem, batch fetch ALL remaining problems
+        // This preloads them for instant switching later
+        setTimeout(() => {
+            batchPreloadAllProblems(problemId);
+        }, 100);  // Small delay to let UI render first
     });
 });
 
@@ -138,58 +69,53 @@ function initializeAnimations() {
     }, 300);
 }
 
-// Load all problems from API to support navigation
+// Load all problems from local JSON files (static)
 async function loadAllProblems() {
     try {
-        console.log('Loading all problems from API...');
-        const response = await fetch(`${API_URL}/problems`);
+        console.log('Loading all problems from local JSON files...');
         
-        if (!response.ok) {
-            throw new Error(`API returned status ${response.status}`);
+        // List of all problem IDs
+        const problemIds = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+        allProblems = [];
+        
+        // Load each problem JSON file
+        for (const id of problemIds) {
+            try {
+                const response = await fetch(`./problems/${id}.json`);
+                if (response.ok) {
+                    const problem = await response.json();
+                    allProblems.push(problem);
+                    console.log(`✓ Loaded problem ${id}`);
+                }
+            } catch (error) {
+                console.warn(`Could not load problem ${id}: ${error.message}`);
+            }
         }
         
-        allProblems = await response.json();
-        console.log(`✓ Loaded ${allProblems.length} problems from API`);
+        console.log(`✓ Loaded ${allProblems.length} problems from local JSON files`);
         
     } catch (error) {
         console.error('Error loading problems:', error);
-        showError('Failed to load problems. Make sure the backend server is running at ' + API_URL);
+        showError('Failed to load problems.');
     }
 }
 
-// ✅ BATCH PRELOAD: Fetch ALL available problems (A-G) at once after displaying first
+// ✅ BATCH PRELOAD: Load ALL available problems (A-G) into cache
 async function batchPreloadAllProblems(currentProblemId) {
     try {
-        // Get ALL problem IDs regardless of cache status
-        const allIds = allProblems.map(p => p.id);
-        
-        if (allIds.length === 0) {
-            console.log('No problems to preload');
-            return;
-        }
-        
-        const idsParam = allIds.join(',');
-        console.log(`🚀 Batch preloading all ${allIds.length} problems: ${idsParam}`);
-        
-        const response = await fetch(`${API_URL}/problems/batch?ids=${idsParam}`);
-        
-        if (!response.ok) {
-            throw new Error(`Batch fetch failed with status ${response.status}`);
-        }
-        
-        const problems = await response.json();
-        
-        // Cache all problems at once
-        problems.forEach(problem => {
-            problemCache[problem.id] = problem;
-            console.log(`✓ Cached ${problem.id}`);
+        // All problems are already loaded by loadAllProblems()
+        // Just cache them if not already cached
+        allProblems.forEach(problem => {
+            if (!problemCache[problem.id]) {
+                problemCache[problem.id] = problem;
+                console.log(`✓ Cached ${problem.id}`);
+            }
         });
         
-        console.log(`✅ All ${problems.length} problems (A-G) preloaded and cached!`);
+        console.log(`✅ All ${allProblems.length} problems (A-G) now in cache!`);
         
     } catch (error) {
         console.error('Batch preload error:', error);
-        // Silent fail - user can still load problems individually if needed
     }
 }
 
@@ -206,11 +132,6 @@ function loadProblem(problemId) {
         
         // Display instantly (no loading overlay)
         displayProblem(currentProblem);
-        
-        // Sync timer in background (non-blocking) - use smart caching to avoid redundant calls
-        checkContestStatusSmart().catch(error => {
-            console.error('Background timer sync failed:', error);
-        });
         
         return;  // ← EARLY EXIT: NO SPINNER SHOWN ✨
     }
@@ -504,319 +425,4 @@ function navigateProblem(direction) {
     }
 }
 
-// Show access denied message
-function showAccessDenied(contest) {
-    const container = document.querySelector('.problem-view') || document.querySelector('#main-container');
-    if (!container) return;
-    
-    let message = '';
-    if (!contest) {
-        message = 'Unable to verify contest status. Please try again.';
-    } else if (contest.status === 'pending') {
-        message = 'Contest has not started yet. Please wait for the countdown to end.';
-    } else if (contest.status === 'ended') {
-        message = 'Contest has ended. No longer accepting solutions.';
-    } else {
-        message = 'You do not have permission to access this problem.';
-    }
-    
-    container.innerHTML = `
-        <div style="
-            text-align: center;
-            padding: 60px 20px;
-            min-height: 400px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            border-radius: 8px;
-            margin: 20px;
-        ">
-            <div style="
-                background: white;
-                padding: 40px;
-                border-radius: 8px;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-                max-width: 500px;
-            ">
-                <div style="font-size: 48px; margin-bottom: 20px;">🔒</div>
-                <p style="font-size: 20px; font-weight: bold; color: #333; margin-bottom: 10px;">Access Denied</p>
-                <p style="font-size: 16px; color: #666; margin-bottom: 20px;">${message}</p>
-                <a href="index.html" style="
-                    display: inline-block;
-                    padding: 10px 20px;
-                    background: #3498db;
-                    color: white;
-                    text-decoration: none;
-                    border-radius: 4px;
-                    font-weight: bold;
-                    transition: background 0.3s;
-                ">Return to Home</a>
-            </div>
-        </div>
-    `;
-}
-
-// ==================== Contest Timer Functions ====================
-
-// Check contest status periodically
-async function checkContestStatus() {
-    try {
-        const response = await fetch(`${API_URL}/contest/status`);
-        if (!response.ok) throw new Error('Failed to check contest status');
-        
-        const contest = await response.json();
-        lastContestStatus = contest;
-        updateTimerDisplay(contest);
-        
-        // Handle problem visibility based on status
-        handleProblemVisibilityByStatus(contest);
-        
-        // Set up smart polling: Check for updates every 30 seconds (optimized for 400+ users)
-        // Only fetch full status if something changed (lightweight check)
-        if (!updateCheckInterval) {
-            updateCheckInterval = setInterval(checkForUpdates, 30000);
-        }
-        
-        // Return contest so caller can check status
-        return contest;
-    } catch (error) {
-        console.error('Error checking contest status:', error);
-        return null;  // Return null so caller knows there was an error
-    }
-}
-
-// Fast check: Poll the last-update endpoint (very lightweight)
-// Dynamically adjust frequency based on remaining time
-async function checkForUpdates() {
-    try {
-        const response = await fetch(`${API_URL}/contest/last-update`);
-        if (!response.ok) return;
-        
-        const data = await response.json();
-        
-        // If something changed since we last checked, fetch full status
-        if (data.last_update > lastUpdateCheck) {
-            lastUpdateCheck = data.last_update;
-            checkContestStatusSmart();  // Fetch full status and detect transitions (or use cached if recent)
-        }
-        
-        // Dynamically adjust update frequency based on remaining time
-        adjustUpdateCheckInterval();
-    } catch (error) {
-        console.error('Error checking for updates:', error);
-    }
-}
-
-// Adjust update check interval based on remaining time
-function adjustUpdateCheckInterval() {
-    // If no interval is set, don't adjust
-    if (!updateCheckInterval) return;
-    
-    // Clear existing interval
-    clearInterval(updateCheckInterval);
-    
-    let newInterval = 30000; // Default: 30 seconds
-    
-    // When timer is under 30 seconds, check more frequently
-    if (localRemainingTime > 0 && localRemainingTime <= 30) {
-        // Under 30 seconds: check every 5 seconds
-        newInterval = 5000;
-        console.log(`⚡ Critical: checking for updates every 5 seconds (${localRemainingTime}s remaining)`);
-    }
-    
-    // Set new interval
-    updateCheckInterval = setInterval(checkForUpdates, newInterval);
-}
-
-// Check status once
-// ✅ SMART STATUS CACHING: Skip redundant API calls within 5 seconds
-async function checkContestStatusSmart() {
-    const now = Date.now();
-    
-    // If we have a cached status and it's within the 5-second interval, return cached
-    if (lastContestStatus && (now - lastStatusCheckTime) < STATUS_CHECK_INTERVAL) {
-        console.log(`✓ Using cached status (${Math.round((now - lastStatusCheckTime) / 1000)}s old, max ${STATUS_CHECK_INTERVAL / 1000}s)`);
-        return lastContestStatus;  // Return cached - no API call!
-    }
-    
-    // Otherwise fetch fresh status from API
-    console.log('🔄 Status cache expired or empty, fetching fresh status...');
-    return checkContestStatusOnce();  // Calls the full status check and updates cache
-}
-
-async function checkContestStatusOnce() {
-    try {
-        console.log('Checking contest status once (from problem.js)');
-        const response = await fetch(`${API_URL}/contest/status`);
-        if (!response.ok) throw new Error('Failed to check contest status');
-        
-        const contest = await response.json();
-        
-        // Detect status transitions and broadcast them (only if we detected the transition, not from external broadcast)
-        if (lastContestStatus && lastContestStatus.status !== contest.status) {
-            console.log(`Contest state changed: ${lastContestStatus.status} → ${contest.status}`);
-            
-            // Only broadcast if this transition wasn't from an external admin broadcast
-            if (window.lastBroadcastSource !== 'admin') {
-                if (lastContestStatus.status === 'pending' && contest.status === 'running') {
-                    broadcastContestStateChange('countdown-ended', 'problem-page');
-                } else if (lastContestStatus.status === 'running' && contest.status === 'ended') {
-                    broadcastContestStateChange('time-ended', 'problem-page');
-                }
-            }
-        }
-        
-        lastContestStatus = contest;
-        lastStatusCheckTime = Date.now();  // ✅ Update timestamp for smart caching
-        window.lastBroadcastSource = null;  // Clear after processing
-        updateTimerDisplay(contest);
-        
-        // Handle contest state visibility
-        handleProblemVisibilityByStatus(contest);
-        
-    } catch (error) {
-        console.error('Error checking contest status:', error);
-    }
-}
-
-// Handle showing/hiding problem based on contest status
-function handleProblemVisibilityByStatus(contest) {
-    const problemContainer = document.querySelector('.problem-view');
-    const pageTitle = document.getElementById('page-title');
-    
-    if (!problemContainer) return;
-    
-    if (contest.is_visible && contest.status === 'pending') {
-        // Contest is pending - hide problem, show countdown message
-        problemContainer.style.display = 'none';
-        if (pageTitle) {
-            pageTitle.innerHTML = '<p style="text-align: center; color: #888; font-size: 16px;">Contest will start soon...</p>';
-        }
-    } else if (contest.status === 'ended') {
-        // Contest ended - hide problem, show ended message
-        problemContainer.style.display = 'none';
-        if (pageTitle) {
-            pageTitle.innerHTML = '<p style="text-align: center; color: #d9534f; font-size: 16px; font-weight: bold;">Contest Ended</p>';
-        }
-    } else if (contest.status === 'running' || !contest.is_visible) {
-        // Contest is running or timer not visible - show problem
-        problemContainer.style.display = 'block';
-    }
-}
-
-// Update timer display on problem page
-function updateTimerDisplay(contest) {
-    const timerBar = document.getElementById('contestTimerBar');
-    const timerDisplay = document.getElementById('contestTimerDisplay');
-    
-    if (!timerBar || !timerDisplay) return;
-    
-    if (contest.status === 'running' || contest.status === 'pending') {
-        // Show timer bar
-        timerBar.style.display = 'block';
-        
-        // Update label based on status
-        const timerLabel = timerBar.querySelector('div:first-child');
-        if (timerLabel) {
-            timerLabel.textContent = contest.status === 'pending' 
-                ? 'Contest Starting In' 
-                : 'Contest Time Remaining';
-        }
-        
-        // Update background color based on status
-        timerBar.style.background = contest.status === 'pending' 
-            ? 'linear-gradient(135deg, #3498db 0%, #2980b9 100%)' 
-            : 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)';
-        
-        // Sync local timer with API
-        localRemainingTime = contest.remaining_time;
-        displayTimeFormatted(localRemainingTime, timerDisplay);
-        
-        // Start smooth countdown if not already running
-        startTimerCountdown();
-        
-        // Only enable phase check timer if contest is actually RUNNING (not pending)
-        if (contest.status === 'running') {
-            startPhaseCheckTimer();
-        } else {
-            stopPhaseCheckTimer();  // Stop if only pending
-        }
-    } else if (contest.status === 'ended') {
-        // Hide timer bar completely when contest ends
-        timerBar.style.display = 'none';
-        
-        stopTimerCountdown();
-        stopPhaseCheckTimer();
-        
-        // Disable submit button
-        const submitBtn = document.getElementById('submit-btn');
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Contest Ended';
-            submitBtn.style.opacity = '0.6';
-            submitBtn.style.cursor = 'not-allowed';
-        }
-    }
-}
-
-function displayTimeFormatted(seconds, element) {
-    // Prevent negative time display
-    if (seconds < 0) seconds = 0;
-    
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = Math.floor(seconds % 60);
-    element.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-}
-
-// Local countdown that ticks every 100ms for smooth animation
-function startTimerCountdown() {
-    if (timerCountdownInterval) return;  // Already running
-    
-    timerCountdownInterval = setInterval(() => {
-        if (localRemainingTime > 0) {
-            localRemainingTime -= 0.1;  // Decrease by 100ms
-            // Clamp to 0 to prevent negative values
-            if (localRemainingTime < 0) {
-                localRemainingTime = 0;
-            }
-            updateAllTimerDisplays();
-        }
-    }, 100);  // Update every 100ms for smooth animation
-}
-
-function stopTimerCountdown() {
-    if (timerCountdownInterval) {
-        clearInterval(timerCountdownInterval);
-        timerCountdownInterval = null;
-    }
-}
-
-function updateAllTimerDisplays() {
-    const timerBarDisplay = document.getElementById('contestTimerDisplay');
-    if (timerBarDisplay) {
-        displayTimeFormatted(localRemainingTime, timerBarDisplay);
-    }
-}
-
-// Phase check timer - only check when necessary
-function startPhaseCheckTimer() {
-    if (phaseCheckTimer) return;
-    
-    phaseCheckTimer = setInterval(() => {
-        // Only check during last 10 seconds of a RUNNING contest
-        // Don't check if timer is 0, not initialized, or if contest hasn't started
-        if (localRemainingTime > 0 && localRemainingTime <= 10) {
-            console.log(`Near end of contest (${localRemainingTime}s remaining), checking status for transition to ended`);
-            checkContestStatusOnce();
-        }
-    }, 1000);
-}
-
-function stopPhaseCheckTimer() {
-    if (phaseCheckTimer) {
-        clearInterval(phaseCheckTimer);
-        phaseCheckTimer = null;
-    }
-}
+// ==================== End of File ====================

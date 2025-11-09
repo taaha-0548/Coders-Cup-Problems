@@ -402,7 +402,6 @@
             <div class="admin-tabs">
                 <button class="admin-tab active" onclick="switchTab('add-problem', event)">Add Problem</button>
                 <button class="admin-tab" onclick="switchTab('manage-problems', event)">Manage Problems</button>
-                <button class="admin-tab" onclick="switchTab('contest-settings', event)">Contest Settings</button>
             </div>
 
             <!-- Add/Edit Problem Tab -->
@@ -514,104 +513,11 @@
                 </div>
             </div>
 
-            <!-- Contest Settings Tab -->
-            <div id="contest-settings" class="tab-content">
-                <div class="form-section">
-                    <h3>Contest Timer Control</h3>
-                    <div id="contestMessage" class="message"></div>
 
-                    <div class="contest-status-box">
-                        <div class="status-item">
-                            <label>Contest Status:</label>
-                            <span id="contestStatus" class="status-badge pending">Pending</span>
-                        </div>
-                        <div class="status-item">
-                            <label>Time Remaining:</label>
-                            <span id="timeRemaining" class="time-display">00:00:00</span>
-                        </div>
-                    </div>
-
-                    <!-- Pre-Contest Setup Section -->
-                    <div style="background: #f0f0f0; padding: 15px; border-radius: 8px; margin-top: 20px; margin-bottom: 20px;">
-                        <h4 style="color: #1a1a2e; margin-top: 0; margin-bottom: 15px;">📋 Pre-Contest Setup</h4>
-                        <p style="color: #666; font-size: 14px; margin-bottom: 15px;">Set when the contest should start and how long it will run</p>
-                        
-                        <div class="form-row">
-                            <div class="form-group" style="flex: 1;">
-                                <label for="preContestCountdown">Countdown Start (minutes from now)</label>
-                                <input type="number" id="preContestCountdown" min="1" max="1440" value="5" placeholder="5">
-                                <small style="color: #999;">Participants will see countdown starting in this many minutes</small>
-                            </div>
-                        </div>
-
-                        <div class="form-row" style="margin-top: 15px;">
-                            <div class="form-group" style="flex: 1;">
-                                <label for="contestDuration">Contest Duration (minutes)</label>
-                                <input type="number" id="contestDuration" min="1" value="120" placeholder="120">
-                                <small style="color: #999;">How long the contest will run after it starts</small>
-                            </div>
-                        </div>
-
-                        <button class="btn-submit" onclick="scheduleContest()" id="btnSchedule" style="margin-top: 15px;">Schedule Contest</button>
-                    </div>
-
-                    <!-- Quick Start Section -->
-                    <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                        <h4 style="color: #1a1a2e; margin-top: 0; margin-bottom: 15px;">Quick Start</h4>
-                        <p style="color: #666; font-size: 14px; margin-bottom: 15px;">Start contest immediately (no countdown)</p>
-
-                        <div class="form-row" style="gap: 10px;">
-                            <div class="form-group" style="flex: 1;">
-                                <label for="quickDuration">Duration (minutes)</label>
-                                <input type="number" id="quickDuration" min="1" value="120" placeholder="120">
-                            </div>
-                            <button class="btn-submit" onclick="startContestNow()" id="btnStartNow" style="align-self: flex-end; margin-bottom: 0;">Start Now</button>
-                        </div>
-                    </div>
-
-                    <!-- Add Time to Pre-Countdown Section -->
-                    <div style="background: #e8f4f8; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                        <h4 style="color: #1a1a2e; margin-top: 0; margin-bottom: 15px;">⏱️ Extend Pre-Countdown</h4>
-                        <p style="color: #666; font-size: 14px; margin-bottom: 15px;">Add extra minutes to the countdown before contest starts</p>
-
-                        <div class="form-row" style="gap: 10px;">
-                            <div class="form-group" style="flex: 1;">
-                                <label for="addPreCountdownMinutes">Minutes to Add</label>
-                                <input type="number" id="addPreCountdownMinutes" min="1" value="5" placeholder="5">
-                            </div>
-                            <button class="btn-submit" onclick="addPreCountdownTime()" id="btnAddPreCountdownTime" style="align-self: flex-end; margin-bottom: 0; background-color: #3498db;" disabled>+ Add Minutes</button>
-                        </div>
-                    </div>
-
-                    <!-- Contest Control Section -->
-                    <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                        <h4 style="color: #1a1a2e; margin-top: 0; margin-bottom: 15px;">Contest Control</h4>
-                        
-                        <div class="form-row" style="gap: 10px;">
-                            <button class="btn-submit" onclick="stopContest()" id="btnStop" style="background-color: #e74c3c; flex: 1;" disabled>Stop Contest</button>
-                            <button class="btn-submit" onclick="resetContest()" id="btnReset" style="background-color: #95a5a6; flex: 1;">Reset</button>
-                        </div>
-
-                        <div class="form-row" style="margin-top: 15px; gap: 10px;">
-                            <div class="form-group" style="flex: 1;">
-                                <label for="addMinutes">Add Minutes (Running Contest)</label>
-                                <input type="number" id="addMinutes" min="1" value="10" placeholder="10">
-                            </div>
-                            <button class="btn-submit" onclick="addTime()" id="btnAddTime" style="align-self: flex-end; margin-bottom: 0;" disabled>+ Add Time</button>
-                        </div>
-                    </div>
-
-                    <div class="form-row" style="margin-top: 15px;">
-                        <label style="display: flex; align-items: center; gap: 10px;">
-                            <input type="checkbox" id="contestVisibility" onchange="toggleVisibility()">
-                            <span>Show Timer to Participants</span>
-                        </label>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 
+    <script src="config.js"></script>
     <script src="js/admin.js"></script>
 </body>
 </html>

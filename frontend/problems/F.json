@@ -1,0 +1,17 @@
+{
+  "id": "F",
+  "title": "Problem F",
+  "origin": "N/A",
+  "timeLimit": "2000ms",
+  "memoryLimit": "512MB",
+  "statement": "This is Problem F. Problem statement to be added.",
+  "input": "Input description to be added.",
+  "output": "Output description to be added.",
+  "samples": [
+    {
+      "input": "Sample input",
+      "output": "Sample output"
+    }
+  ],
+  "vj_link": "https://vjudge.net/contest/765290#problem/F"
+}

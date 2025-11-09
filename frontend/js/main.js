@@ -21,25 +21,32 @@ async function handlePasswordSubmit(event) {
         submitButton.disabled = true;
         submitButton.textContent = 'Verifying...';
         
-        const response = await fetch(`${API_URL}/validate-password`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ password })
-        });
+        // ⚠️ IMPORTANT: Wait for config to load from .env
+        await configReady;
         
-        const data = await response.json();
+        // Debug logging
+        console.log('=== PASSWORD DEBUG ===');
+        console.log('Input password:', password);
+        console.log('CONFIG.CONTEST_PASSWORD:', CONFIG.CONTEST_PASSWORD);
+        console.log('CONFIG.LOADED:', CONFIG.LOADED);
+        console.log('Match:', password === CONFIG.CONTEST_PASSWORD);
+        console.log('Input length:', password.length);
+        console.log('Config length:', CONFIG.CONTEST_PASSWORD.length);
+        console.log('=======================');
         
-        if (response.ok) {
+        // ✅ STATIC: Check password from CONFIG (environment variable or default)
+        if (password === CONFIG.CONTEST_PASSWORD) {
             console.log('✓ Password correct, setting authenticated state');
             setUserAuthenticated();
             document.getElementById('passwordModal').classList.add('hidden');
-            hideLoading(); // Make sure loading is hidden
+            hideLoading();
             // Reload to show main content
             location.reload();
         } else {
-            errorDiv.textContent = data.error || 'Invalid password';
+            console.warn('✗ Password mismatch!');
+            console.warn(`Expected: "${CONFIG.CONTEST_PASSWORD}"`);
+            console.warn(`Got: "${password}"`);
+            errorDiv.textContent = 'Invalid password';
             errorDiv.style.display = 'block';
             document.getElementById('passwordInput').value = '';
         }
@@ -80,36 +87,9 @@ function togglePasswordVisibility() {
 
 // Global variables
 let allProblems = [];
-let lastProblemsUpdateTime = 0; // Track when problems were last fetched
-const PROBLEMS_CACHE_DURATION = 60000; // 1 minute in milliseconds
-
-// Contest status variables
-let statusPollingInterval = null;
-let timerCountdownInterval = null;
-let phaseCheckTimer = null;
-let lastContestStatus = null;
-let localRemainingTime = 0;
-let lastUpdateCheck = 0;  // Track last-update timestamp for smart polling
-let updateCheckInterval = null;  // Poll for updates every 5 seconds
 
 // API URL - dynamically set based on current domain
 // (Already defined above in password section)
-
-// Broadcast contest state changes to other tabs/windows
-function broadcastContestStateChange(action, source = 'index-page') {
-    const event = {
-        type: 'contestStateChange',
-        action: action,
-        source: source,
-        timestamp: Date.now()
-    };
-    
-    localStorage.setItem('contestStateChange', JSON.stringify(event));
-    
-    setTimeout(() => {
-        localStorage.removeItem('contestStateChange');
-    }, 100);
-}
 
 // DOM elements
 const problemsTbody = document.getElementById('problems-tbody');
@@ -145,55 +125,13 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('passwordModal').classList.add('hidden');
     
     // Show loading spinner immediately
-    showLoading('Loading contest...');
+    showLoading('Loading problems...');
     
     initializeTabClicks();  // Add click handlers to tab links
     initializeAnimations();
-    
-    // Initialize contest status and timer FIRST (before showing any tab content)
-    initializeContestStatus().then(() => {
-        // Now initialize navigation (which may show problems tab)
-        // This will call showProblems() which will handle loading and displaying problems
-        initializeNavigation();
-    }).catch(() => {
-        // Even if contest status fails, show navigation
-        initializeNavigation();
-        hideLoading();
-    });
-    
-    // Set a timeout to ensure spinner is hidden after 10 seconds (failsafe)
-    setTimeout(() => {
-        hideLoading();
-    }, 10000);
-    
-    // Define reusable storage event handler
-    window.handleStorageEvent = function(e) {
-        if (e.key === 'contestStateChange') {
-            try {
-                const event = JSON.parse(e.newValue);
-                if (event && event.type === 'contestStateChange') {
-                    console.log(`Received broadcast from ${event.source}: ${event.action}`);
-                    // Store the source to avoid re-broadcasting external transitions
-                    window.lastBroadcastSource = event.source;
-                    // Immediately refresh contest status (but don't re-broadcast if from admin)
-                    checkContestStatusOnce();
-                }
-            } catch (err) {
-                console.error('Error parsing broadcast event:', err);
-            }
-        }
-    };
-    
-    // Listen for admin broadcast events (when admin changes contest state)
-    window.addEventListener('storage', window.handleStorageEvent);
-    
-    // Cleanup on page unload to prevent memory leaks
-    window.addEventListener('beforeunload', function() {
-        window.removeEventListener('storage', window.handleStorageEvent);
-        if (updateCheckInterval) clearInterval(updateCheckInterval);
-        if (timerCountdownInterval) clearInterval(timerCountdownInterval);
-        if (phaseCheckTimer) clearInterval(phaseCheckTimer);
-    });
+    initializeNavigation();  // Initialize navigation
+    loadProblems();  // Load problems from JSON
+    hideLoading();
 });
 
 // Setup tab click handlers to prevent page reload
@@ -279,23 +217,36 @@ function initializeAnimations() {
     }
 }
 
-// Load all problems from API
+// Load all problems from local JSON files (static)
 async function loadProblems() {
     try {
-        // Always fetch fresh data from API
-        const response = await fetch(`${API_URL}/problems`);
-        if (!response.ok) {
-            throw new Error(`API returned status ${response.status}`);
+        // List of all problem IDs available
+        const problemIds = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+        
+        // Load each problem JSON file
+        allProblems = [];
+        
+        for (const id of problemIds) {
+            try {
+                const response = await fetch(`./problems/${id}.json`);
+                if (response.ok) {
+                    const problem = await response.json();
+                    allProblems.push(problem);
+                    console.log(`✓ Loaded problem ${id}`);
+                }
+            } catch (error) {
+                console.warn(`Could not load problem ${id}: ${error.message}`);
+                // Continue loading other problems even if one fails
+            }
         }
-
-        allProblems = await response.json();
-        lastProblemsUpdateTime = Date.now(); // Update timestamp when fetched
-        console.log(`✓ Loaded ${allProblems.length} problems from API`);
-        displayProblems(); // Ensure DOM updates
+        
+        lastProblemsUpdateTime = Date.now();
+        console.log(`✓ Loaded ${allProblems.length} problems from local JSON files`);
+        displayProblems(); // Display loaded problems
     } catch (error) {
         console.error('Error loading problems:', error);
-        showError('Failed to load problems. Make sure the backend server is running at ' + API_URL);
-        hideLoading(); // Ensure spinner is hidden
+        showError('Failed to load problems.');
+        hideLoading();
     }
 }
 
@@ -484,119 +435,12 @@ function showInstructions() {
 
 // Show problems table
 function showProblems() {
-    const container = document.querySelector('#main-container');
-    
-    // Immediately show loading state to provide instant feedback
-    container.innerHTML = `
-        <div style="text-align: center; padding: 60px 20px;">
-            <p style="font-size: 18px; color: #666;">Loading problems...</p>
-            <div style="margin-top: 20px; display: inline-block;">
-                <div style="border: 4px solid #f3f3f3; border-top: 4px solid #e74c3c; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;"></div>
-            </div>
-            <style>
-                @keyframes spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
-                }
-            </style>
-        </div>
-    `;
-    
-    // Check if cache is still fresh or if we need to refetch
-    const now = Date.now();
-    const isCacheStale = (now - lastProblemsUpdateTime) > PROBLEMS_CACHE_DURATION;
-    
-    // Always fetch fresh data if cache is stale or problems are not yet loaded
-    if (allProblems.length === 0 || isCacheStale) {
-        // Fetch fresh problems
-        loadProblems().then(() => {
-            hideLoading(); // Hide main overlay after problems are loaded
-            // After loading, check contest status and display accordingly
-            if (lastContestStatus) {
-                displayProblemsBasedOnStatus(lastContestStatus);
-            } else {
-                checkContestStatusAndDisplay();
-            }
-        }).catch(() => {
-            hideLoading(); // Hide main overlay even if there's an error
-        });
-    } else {
-        // Cache is fresh, just display loaded problems
-        hideLoading();
-        if (lastContestStatus) {
-            displayProblemsBasedOnStatus(lastContestStatus);
-        } else {
-            checkContestStatusAndDisplay();
-        }
-    }
+    displayProblemsTable();
+    displayProblems();
+    hideLoading();
 }
 
-async function checkContestStatusAndDisplay() {
-    try {
-        const response = await fetch(`${API_URL}/contest/status`);
-        if (!response.ok) throw new Error('Failed to check contest status');
-        
-        const contest = await response.json();
-        displayProblemsBasedOnStatus(contest);
-    } catch (error) {
-        console.error('Error checking contest status:', error);
-        // If error, just display problems normally without contest status
-        displayProblemsTable();
-        // Problems should already be loaded at this point
-        displayProblems();
-        hideLoading(); // Ensure spinner is hidden after error
-    }
-}
-
-function displayProblemsBasedOnStatus(contest) {
-    const container = document.querySelector('#main-container');
-    
-    // If contest timer is visible to participants
-    if (contest.is_visible) {
-        if (contest.status === 'pending') {
-            // Pre-contest: ONLY show countdown, NO problems
-            displayPreContestCountdown(contest);
-            startPhaseCheckTimer();  // Start checking for transition to running
-            hideLoading();
-        } else if (contest.status === 'running') {
-            // Contest is running: Show problems + remaining time
-            displayProblemsTable();
-            // Show timer on page
-            updateContestTimerOnPage(contest);
-            // Display the already-loaded problems
-            displayProblems();
-            hideLoading();
-            startPhaseCheckTimer();  // Start checking for transition to ended
-        } else if (contest.status === 'ended') {
-            // Contest ended: ONLY show message, NO problems
-            displayContestEnded();
-            stopPhaseCheckTimer();  // Stop checking, contest is over
-            hideLoading();
-        }
-    } else {
-        // Timer not visible to participants - show problems only if running
-        if (contest.status === 'running') {
-            displayProblemsTable();
-            // Display the already-loaded problems
-            displayProblems();
-            hideLoading();
-        } else if (contest.status === 'pending') {
-            // Contest hasn't started yet, show nothing
-            const container = document.querySelector('#main-container');
-            container.innerHTML = `
-                <div style="text-align: center; padding: 60px 20px;">
-                    <p style="font-size: 18px; color: #666;">Contest has not started yet.</p>
-                </div>
-            `;
-            hideLoading();
-        } else if (contest.status === 'ended') {
-            // Contest ended, show message
-            displayContestEnded();
-            hideLoading();
-        }
-    }
-}
-
+// Display the problems table
 function displayProblemsTable() {
     const container = document.querySelector('#main-container');
     container.innerHTML = `
@@ -614,166 +458,15 @@ function displayProblemsTable() {
                 </tbody>
             </table>
         </div>
-        
-        <div class="loading" id="loading" style="display: none;">
-            <p>Loading problems...</p>
-        </div>
     `;
 }
 
-// Display pre-contest countdown
-function displayPreContestCountdown(contest) {
-    const container = document.querySelector('#main-container');
-    container.innerHTML = `
-        <div style="text-align: center; padding: 60px 20px;">
-            <h2 style="color: #1a1a2e; margin-bottom: 30px;">Contest Starting Soon</h2>
-            <div style="font-size: 20px; color: #666; margin-bottom: 20px;">Starting in</div>
-            <div style="font-size: 80px; font-weight: bold; color: #3498db; font-family: 'Courier New', monospace; letter-spacing: 3px; margin: 40px 0;">
-                <span id="preContestTimer">00:00:00</span>
-            </div>
-            <p style="font-size: 16px; color: #999; margin-top: 30px;">Problems will be displayed once the contest begins</p>
-        </div>
-    `;
-    updatePreContestTimer(contest);
-    updateTimerDisplay(contest);  // Set timer bar to blue
-    startTimerCountdown();  // Start smooth countdown
-}
 
-// Display contest countdown
-function displayContestCountdown(contest) {
-    const container = document.querySelector('#main-container');
-    container.innerHTML = `
-        <div style="text-align: center; padding: 60px 20px;">
-            <h2 style="color: #1a1a2e; margin-bottom: 30px;">Contest Running</h2>
-            <div style="font-size: 20px; color: #666; margin-bottom: 20px;">Time Remaining</div>
-            <div style="font-size: 80px; font-weight: bold; color: #e74c3c; font-family: 'Courier New', monospace; letter-spacing: 3px; margin: 40px 0;">
-                <span id="timerDisplay">00:00:00</span>
-            </div>
-        </div>
-    `;
-    updateTimerDisplay(contest);
-    startTimerCountdown();  // Start smooth countdown
-}
 
-// Display contest ended message
-function displayContestEnded() {
-    const container = document.querySelector('#main-container');
-    container.innerHTML = `
-        <div style="text-align: center; padding: 60px 20px;">
-            <h2 style="color: #e74c3c; margin-bottom: 30px;">🏁 Contest Finished</h2>
-            <p style="font-size: 18px; color: #666; margin-top: 20px;">Thank you for participating!</p>
-        </div>
-    `;
-}
+// Display problems from JSON
 
-function updatePreContestTimer(contest) {
-    const display = document.getElementById('preContestTimer');
-    if (display && contest.remaining_time) {
-        localRemainingTime = contest.remaining_time;  // Sync with API
-        displayTimeFormatted(localRemainingTime, display);
-    }
-}
-
-function updateTimerDisplay(contest) {
-    const display = document.getElementById('timerDisplay');
-    if (display && contest.remaining_time) {
-        localRemainingTime = contest.remaining_time;  // Sync with API
-        displayTimeFormatted(localRemainingTime, display);
-    }
-}
-
-function displayTimeFormatted(seconds, element) {
-    // Prevent negative time display
-    if (seconds < 0) seconds = 0;
-    
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = Math.floor(seconds % 60);
-    element.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-}
-
-// Update timer on problems page (when contest is running)
-function updateContestTimerOnPage(contest) {
-    const timerBar = document.getElementById('contestTimerBar');
-    const timerDisplay = document.getElementById('contestTimerDisplay');
-    
-    if (!timerBar || !timerDisplay) return;
-    
-    if (contest.status === 'running') {
-        // Show timer bar
-        timerBar.style.display = 'block';
-        
-        // Sync local timer with API
-        localRemainingTime = contest.remaining_time;
-        displayTimeFormatted(localRemainingTime, timerDisplay);
-        
-        // Start smooth countdown if not already running
-        startTimerCountdown();
-    } else {
-        // Hide timer bar if not running
-        timerBar.style.display = 'none';
-        stopTimerCountdown();
-    }
-}
-
-// Local countdown that ticks every 100ms for smooth animation
-function startTimerCountdown() {
-    if (timerCountdownInterval) return;  // Already running
-    
-    timerCountdownInterval = setInterval(() => {
-        if (localRemainingTime > 0) {
-            localRemainingTime -= 0.1;  // Decrease by 100ms
-            // Clamp to 0 to prevent negative values
-            if (localRemainingTime < 0) {
-                localRemainingTime = 0;
-            }
-            updateAllTimerDisplays();
-        }
-    }, 100);  // Update every 100ms for smooth animation
-}
-
-function updateAllTimerDisplays() {
-    // Update pre-contest timer (if visible)
-    const preContestDisplay = document.getElementById('preContestTimer');
-    if (preContestDisplay) {
-        displayTimeFormatted(localRemainingTime, preContestDisplay);
-    }
-    
-    // Update running contest timer displays (if visible)
-    const timerDisplay = document.getElementById('timerDisplay');
-    if (timerDisplay) {
-        displayTimeFormatted(localRemainingTime, timerDisplay);
-    }
-    
-    const timerBarDisplay = document.getElementById('contestTimerDisplay');
-    if (timerBarDisplay) {
-        displayTimeFormatted(localRemainingTime, timerBarDisplay);
-        
-        // Update color based on time remaining
-        const timerBar = document.getElementById('contestTimerBar');
-        if (timerBar) {
-            if (localRemainingTime <= 300) {
-                // Less than 5 minutes - red warning
-                timerBar.style.background = 'linear-gradient(135deg, #c0392b 0%, #a93226 100%)';
-                timerBarDisplay.style.color = '#ff6b6b';
-            } else {
-                // Normal - red
-                timerBar.style.background = 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)';
-                timerBarDisplay.style.color = 'white';
-            }
-        }
-    }
-}
-
-function stopTimerCountdown() {
-    if (timerCountdownInterval) {
-        clearInterval(timerCountdownInterval);
-        timerCountdownInterval = null;
-    }
-}
-
-let contestPollingInterval = null;
 let currentTab = 'instructions'; // Track current tab
+
 
 // Update current tab when user navigates
 function setCurrentTab(tabName) {
@@ -782,66 +475,17 @@ function setCurrentTab(tabName) {
 
 // Check contest status once (on-demand, not polling)
 async function checkContestStatusOnce() {
-    try {
-        const response = await fetch(`${API_URL}/contest/status`);
-        if (!response.ok) throw new Error('Failed to check status');
-        
-        const contest = await response.json();
-        
-        // Check if status changed
-        const statusChanged = lastContestStatus && lastContestStatus.status !== contest.status;
-        const visibilityChanged = lastContestStatus && lastContestStatus.is_visible !== contest.is_visible;
-        
-        if (statusChanged) {
-            console.log(`Contest state changed: ${lastContestStatus?.status || 'unknown'} → ${contest.status}`);
-            
-            // Only broadcast if this transition wasn't from an external admin broadcast
-            if (window.lastBroadcastSource !== 'admin') {
-                // Broadcast the phase transition so all tabs/windows update
-                if (lastContestStatus?.status === 'pending' && contest.status === 'running') {
-                    broadcastContestStateChange('countdown-ended', 'index-page');
-                } else if (lastContestStatus?.status === 'running' && contest.status === 'ended') {
-                    broadcastContestStateChange('time-ended', 'index-page');
-                }
-            }
-        }
-        
-        lastContestStatus = contest;
-        window.lastBroadcastSource = null;  // Clear after processing
-        
-        // Always update timer display (for visibility sync)
-        updateTimerDisplay(contest);
-        
-        // If state changed, refresh display based on status
-        if (statusChanged || visibilityChanged) {
-            // Always update problems display when status changes, regardless of active tab
-            // This ensures problems appear when contest starts (pending→running)
-            await checkContestStatusAndDisplay();
-        } else {
-            // State unchanged - just sync timer for accuracy
-            if (contest.status === 'pending' || contest.status === 'running') {
-                localRemainingTime = contest.remaining_time;
-            }
-        }
-    } catch (error) {
-        console.error('Error checking contest status:', error);
-    }
+    // ✅ STATIC: No backend - just display problems
+    // No status checking needed
+    console.log('Static site - no contest status to check');
 }
 
 // Timer interval that checks for phase transitions
 let phaseCheckInterval = null;
 
 function startPhaseCheckTimer() {
-    if (phaseCheckInterval) return; // Already running
-    
-    // Check status when contest is running (to detect end time)
-    // Only check when contest might be ending (last 10 seconds)
-    phaseCheckInterval = setInterval(async () => {
-        if (lastContestStatus && lastContestStatus.status === 'running' && lastContestStatus.remaining_time <= 10) {
-            // Only 10 seconds left, check for end
-            await checkContestStatusOnce();
-        }
-    }, 1000);  // Every second when near end
+    // ✅ STATIC: No timer checking needed
+    console.log('Static site - no phase checking');
 }
 
 function stopPhaseCheckTimer() {
@@ -852,125 +496,4 @@ function stopPhaseCheckTimer() {
 }
 
 // Initialize contest status and set up periodic checking
-async function initializeContestStatus() {
-    try {
-        const response = await fetch(`${API_URL}/contest/status`);
-        if (!response.ok) throw new Error('Failed to check contest status');
-        
-        const contest = await response.json();
-        lastContestStatus = contest;
-        updateTimerDisplay(contest);
-        
-        // Set up smart polling: Check for updates every 30 seconds (optimized for 400+ users)
-        // Only fetch full status if something changed (lightweight check)
-        if (!updateCheckInterval) {
-            updateCheckInterval = setInterval(checkForUpdates, 30000);
-        }
-        
-    } catch (error) {
-        console.error('Error initializing contest status:', error);
-    }
-}
 
-// Fast check: Poll the last-update endpoint (very lightweight)
-async function checkForUpdates() {
-    try {
-        const response = await fetch(`${API_URL}/contest/last-update`);
-        if (!response.ok) return;
-        
-        const data = await response.json();
-        
-        // If something changed since we last checked, fetch full status
-        if (data.last_update > lastUpdateCheck) {
-            lastUpdateCheck = data.last_update;
-            checkContestStatusOnce();  // Fetch full status and detect transitions
-        }
-        
-        // Dynamically adjust update frequency based on remaining time
-        adjustUpdateCheckInterval();
-    } catch (error) {
-        console.error('Error checking for updates:', error);
-    }
-}
-
-// Adjust update check interval based on remaining time
-function adjustUpdateCheckInterval() {
-    // If no interval is set, don't adjust
-    if (!updateCheckInterval) return;
-    
-    // Clear existing interval
-    clearInterval(updateCheckInterval);
-    
-    let newInterval = 30000; // Default: 30 seconds
-    
-    // When timer is under 30 seconds, check more frequently
-    if (localRemainingTime > 0 && localRemainingTime <= 30) {
-        // Under 30 seconds: check every 5 seconds
-        newInterval = 5000;
-        console.log(`⚡ Critical: checking for updates every 5 seconds (${localRemainingTime}s remaining)`);
-    }
-    
-    // Set new interval
-    updateCheckInterval = setInterval(checkForUpdates, newInterval);
-}
-
-// Update timer display on index page
-function updateTimerDisplay(contest) {
-    const timerBar = document.getElementById('contestTimerBar');
-    const timerDisplay = document.getElementById('contestTimerDisplay');
-    
-    if (!timerBar || !timerDisplay) return;
-    
-    if (contest.status === 'running' || contest.status === 'pending') {
-        // Show timer bar
-        timerBar.style.display = 'block';
-        
-        // Update label based on status
-        const timerLabel = timerBar.querySelector('div:first-child');
-        if (timerLabel) {
-            timerLabel.textContent = contest.status === 'pending' 
-                ? 'Contest Starting In' 
-                : 'Contest Time Remaining';
-        }
-        
-        // Update background color based on status
-        timerBar.style.background = contest.status === 'pending' 
-            ? 'linear-gradient(135deg, #3498db 0%, #2980b9 100%)' 
-            : 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)';
-        
-        // Sync local timer with API
-        localRemainingTime = contest.remaining_time;
-        displayTimeFormatted(localRemainingTime, timerDisplay);
-        
-        // Start smooth countdown if not already running
-        startTimerCountdown();
-        
-        // Only enable phase check timer if contest is actually RUNNING (not pending)
-        if (contest.status === 'running') {
-            startPhaseCheckTimer();
-        } else {
-            stopPhaseCheckTimer();  // Stop if only pending
-        }
-    } else if (contest.status === 'ended') {
-        // Hide timer bar completely when contest ends
-        timerBar.style.display = 'none';
-        
-        stopTimerCountdown();
-        stopPhaseCheckTimer();
-    }
-}
-
-// Legacy function - now just calls checkContestStatusOnce for backward compatibility
-function startContestPolling() {
-    // No longer polling - check is event-driven
-    // This function is kept for compatibility with admin.js if needed
-}
-
-function stopContestPolling() {
-    stopPhaseCheckTimer();
-    if (contestPollingInterval) {
-        clearInterval(contestPollingInterval);
-        contestPollingInterval = null;
-    }
-    lastContestStatus = null;
-}
