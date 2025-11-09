@@ -18,18 +18,23 @@ const submitBtn = document.getElementById('submit-btn');
 const pageTitle = document.getElementById('page-title');
 
 // Initialize the application
-document.addEventListener('DOMContentLoaded', async function() {
+document.addEventListener('DOMContentLoaded', function() {
     const urlParams = new URLSearchParams(window.location.search);
     const problemId = urlParams.get('id') || 'A';
     
     // ✅ STATIC: No contest status checking - just load problems directly
     // Load all problems once and cache them
-    await loadAllProblems();
-    await batchPreloadAllProblems(problemId);
-    
-    loadProblem(problemId);
-    setupProblemNavigation();
-    initializeAnimations();
+    loadAllProblems().then(() => {
+        loadProblem(problemId);
+        setupProblemNavigation();
+        initializeAnimations();
+        
+        // ✅ After displaying first problem, batch fetch ALL remaining problems
+        // This preloads them for instant switching later
+        setTimeout(() => {
+            batchPreloadAllProblems(problemId);
+        }, 100);  // Small delay to let UI render first
+    });
 });
 
 // Initialize animations and interactions
@@ -78,8 +83,6 @@ async function loadAllProblems() {
                 if (response.ok) {
                     const problem = await response.json();
                     allProblems.push(problem);
-                    // Cache immediately as we load
-                    problemCache[problem.id] = problem;
                 }
             } catch (error) {
                 // Continue loading other problems
@@ -95,7 +98,7 @@ async function loadAllProblems() {
 async function batchPreloadAllProblems(currentProblemId) {
     try {
         // All problems are already loaded by loadAllProblems()
-        // Ensure all are cached
+        // Just cache them if not already cached
         allProblems.forEach(problem => {
             if (!problemCache[problem.id]) {
                 problemCache[problem.id] = problem;
@@ -114,15 +117,13 @@ function loadProblem(problemId) {
         currentProblem = problemCache[problemId];
         updateActiveNavLink(problemId);
         
-        // Display instantly (no loading overlay)
+        // Display instantly
         displayProblem(currentProblem);
         
-        return;  // ← EARLY EXIT: NO SPINNER SHOWN ✨
+        return;  // ← EARLY EXIT: INSTANT DISPLAY ✨
     }
     
-    // Problem not in cache - show loading and wait for batch preload to complete
-    showLoading(true);
-    
+    // Problem not in cache - wait for batch preload to complete
     // Wait for batch preload with timeout (max 2 seconds)
     const waitStart = Date.now();
     const checkCache = setInterval(() => {
@@ -131,12 +132,10 @@ function loadProblem(problemId) {
             currentProblem = problemCache[problemId];
             updateActiveNavLink(problemId);
             displayProblem(currentProblem);
-            showLoading(false);
         } else if (Date.now() - waitStart > 2000) {
             // Timeout - show error
             clearInterval(checkCache);
             showError(`Problem ${problemId} not found.`);
-            showLoading(false);
         }
     }, 50);
 }
@@ -317,11 +316,6 @@ window.addEventListener('popstate', (e) => {
         loadProblem(problemId);
     }
 });
-
-// Show/hide loading overlay
-function showLoading(show) {
-    loadingOverlay.style.display = show ? 'flex' : 'none';
-}
 
 // Show error message
 function showError(message) {

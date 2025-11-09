@@ -28,7 +28,6 @@ async function handlePasswordSubmit(event) {
         if (password === CONFIG.CONTEST_PASSWORD) {
             setUserAuthenticated();
             document.getElementById('passwordModal').classList.add('hidden');
-            hideLoading();
             // Reload to show main content
             location.reload();
         } else {
@@ -78,29 +77,12 @@ let allProblems = [];
 
 // DOM elements
 const problemsTbody = document.getElementById('problems-tbody');
-const loadingElement = document.getElementById('loading');
-const loadingOverlay = document.getElementById('loading-overlay');
-
-// Show/hide loading spinner
-function showLoading(message = 'Loading problems...') {
-    if (loadingOverlay) {
-        loadingOverlay.querySelector('.loading-content p').textContent = message;
-        loadingOverlay.style.display = 'flex';
-    }
-}
-
-function hideLoading() {
-    if (loadingOverlay) {
-        loadingOverlay.style.display = 'none';
-    }
-}
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
     // Check password authentication first
     if (!isUserAuthenticated()) {
-        // Hide loading overlay and show password modal
-        hideLoading();
+        // Show password modal
         document.getElementById('passwordModal').classList.remove('hidden');
         document.getElementById('passwordInput').focus();
         return; // Stop further initialization
@@ -109,14 +91,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Hide password modal if somehow still visible
     document.getElementById('passwordModal').classList.add('hidden');
     
-    // Show loading spinner immediately
-    showLoading('Loading problems...');
-    
     initializeTabClicks();  // Add click handlers to tab links
     initializeAnimations();
     initializeNavigation();  // Initialize navigation
     loadProblems();  // Load problems from JSON
-    hideLoading();
 });
 
 // Setup tab click handlers to prevent page reload
@@ -227,7 +205,6 @@ async function loadProblems() {
         displayProblems(); // Display loaded problems
     } catch (error) {
         showError('Failed to load problems.');
-        hideLoading();
     }
 }
 
@@ -408,16 +385,12 @@ function showInstructions() {
             </div>
         </div>
     `;
-    
-    // Hide main loading overlay
-    hideLoading();
 }
 
 // Show problems table
 function showProblems() {
     displayProblemsTable();
     displayProblems();
-    hideLoading();
 }
 
 // Display the problems table
