@@ -72,8 +72,6 @@ function initializeAnimations() {
 // Load all problems from local JSON files (static)
 async function loadAllProblems() {
     try {
-        console.log('Loading all problems from local JSON files...');
-        
         // List of all problem IDs
         const problemIds = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
         allProblems = [];
@@ -85,17 +83,13 @@ async function loadAllProblems() {
                 if (response.ok) {
                     const problem = await response.json();
                     allProblems.push(problem);
-                    console.log(`✓ Loaded problem ${id}`);
                 }
             } catch (error) {
-                console.warn(`Could not load problem ${id}: ${error.message}`);
+                // Continue loading other problems
             }
         }
         
-        console.log(`✓ Loaded ${allProblems.length} problems from local JSON files`);
-        
     } catch (error) {
-        console.error('Error loading problems:', error);
         showError('Failed to load problems.');
     }
 }
@@ -108,25 +102,18 @@ async function batchPreloadAllProblems(currentProblemId) {
         allProblems.forEach(problem => {
             if (!problemCache[problem.id]) {
                 problemCache[problem.id] = problem;
-                console.log(`✓ Cached ${problem.id}`);
             }
         });
         
-        console.log(`✅ All ${allProblems.length} problems (A-G) now in cache!`);
-        
     } catch (error) {
-        console.error('Batch preload error:', error);
+        // Cache preload error
     }
 }
 
 // Load a specific problem from API
 function loadProblem(problemId) {
-    console.log('Loading problem:', problemId);
-    console.log('Available problems:', allProblems.map(p => p.id));
-    
     // Check cache FIRST before showing spinner
     if (problemCache[problemId]) {
-        console.log(`✓ Using cached problem ${problemId} - instant display`);
         currentProblem = problemCache[problemId];
         updateActiveNavLink(problemId);
         
@@ -137,7 +124,6 @@ function loadProblem(problemId) {
     }
     
     // Problem not in cache - show loading and wait for batch preload to complete
-    console.log(`⏳ Problem ${problemId} not yet cached, waiting for batch preload...`);
     showLoading(true);
     
     // Wait for batch preload with timeout (max 2 seconds)
@@ -145,7 +131,6 @@ function loadProblem(problemId) {
     const checkCache = setInterval(() => {
         if (problemCache[problemId]) {
             clearInterval(checkCache);
-            console.log(`✓ Problem ${problemId} now in cache after batch preload`);
             currentProblem = problemCache[problemId];
             updateActiveNavLink(problemId);
             displayProblem(currentProblem);
@@ -153,7 +138,6 @@ function loadProblem(problemId) {
         } else if (Date.now() - waitStart > 2000) {
             // Timeout - show error
             clearInterval(checkCache);
-            console.error(`Problem ${problemId} not found after 2s timeout`);
             showError(`Problem ${problemId} not found.`);
             showLoading(false);
         }

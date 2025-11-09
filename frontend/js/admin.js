@@ -36,16 +36,8 @@ async function loginAdmin() {
         // ⚠️ IMPORTANT: Wait for config to load from .env
         await configReady;
         
-        // Debug logging
-        console.log('=== ADMIN LOGIN DEBUG ===');
-        console.log('Input password:', password);
-        console.log('CONFIG.ADMIN_PASSWORD:', CONFIG.ADMIN_PASSWORD);
-        console.log('Match:', password === CONFIG.ADMIN_PASSWORD);
-        console.log('==========================');
-        
         // Check password from CONFIG (loaded from .env)
         if (password === CONFIG.ADMIN_PASSWORD) {
-            console.log('✓ Admin password correct');
             sessionStorage.setItem('adminLoggedIn', 'true');
             isLoggedIn = true;
             showAdminPanel();
@@ -53,15 +45,11 @@ async function loginAdmin() {
             document.getElementById('adminPassword').value = '';
             showMessage('success', 'Login successful!', 'loginMessage');
         } else {
-            console.warn('✗ Admin password mismatch!');
-            console.warn(`Expected: "${CONFIG.ADMIN_PASSWORD}"`);
-            console.warn(`Got: "${password}"`);
             showMessage('error', 'Invalid password!', 'loginMessage');
             document.getElementById('adminPassword').value = '';
         }
     } catch (error) {
         showMessage('error', 'Error: ' + error.message, 'loginMessage');
-        console.error('Login error:', error);
     }
 }
 
@@ -297,7 +285,6 @@ async function saveProblem() {
         setTimeout(() => loadProblemsForManagement(), 500);
         
     } catch (error) {
-        console.error('Error saving problem:', error);
         showMessage('error', `Error: ${error.message}`, 'message');
     }
 }
@@ -319,10 +306,9 @@ async function loadProblemsForManagement() {
                     allProblems[id] = data;
                 } else {
                     // Problem file doesn't exist yet
-                    console.log(`Problem ${id}.json not found`);
                 }
             } catch (error) {
-                console.log(`Error loading ${id}.json:`, error);
+                // Error loading problem file
             }
         }
         
@@ -334,7 +320,7 @@ async function loadProblemsForManagement() {
                     const data = JSON.parse(localStorage.getItem(key));
                     allProblems[data.id] = data;
                 } catch (error) {
-                    console.error('Error parsing stored problem:', error);
+                    // Error parsing stored problem
                 }
             }
         }
@@ -342,7 +328,6 @@ async function loadProblemsForManagement() {
         displayProblemsTable(Object.values(allProblems).sort((a, b) => a.id.localeCompare(b.id)));
         
     } catch (error) {
-        console.error('Error loading problems:', error);
         const container = document.getElementById('problemsTableContainer');
         container.innerHTML = `<div class="message error">Error loading problems: ${error.message}</div>`;
     }
@@ -446,7 +431,6 @@ async function editProblem(problemId) {
         showMessage('info', `Editing problem ${problemId}...`, 'message');
         
     } catch (error) {
-        console.error('Error loading problem:', error);
         showMessage('error', `Error: ${error.message}`, 'managingMessage');
     }
 }
@@ -470,7 +454,6 @@ async function deleteProblem(problemId) {
         setTimeout(() => loadProblemsForManagement(), 500);
         
     } catch (error) {
-        console.error('Error deleting problem:', error);
         showMessage('error', `Error: ${error.message}`, 'managingMessage');
     }
 }
@@ -509,5 +492,4 @@ function showMessage(type, text, elementId) {
 function updateProblemsDirectory() {
     // In a static setup, we'd need to download the JSON
     // For now, just store in localStorage
-    console.log('Problems updated. Current problems:', allProblems);
 }

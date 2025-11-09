@@ -24,34 +24,19 @@ async function handlePasswordSubmit(event) {
         // ⚠️ IMPORTANT: Wait for config to load from .env
         await configReady;
         
-        // Debug logging
-        console.log('=== PASSWORD DEBUG ===');
-        console.log('Input password:', password);
-        console.log('CONFIG.CONTEST_PASSWORD:', CONFIG.CONTEST_PASSWORD);
-        console.log('CONFIG.LOADED:', CONFIG.LOADED);
-        console.log('Match:', password === CONFIG.CONTEST_PASSWORD);
-        console.log('Input length:', password.length);
-        console.log('Config length:', CONFIG.CONTEST_PASSWORD.length);
-        console.log('=======================');
-        
         // ✅ STATIC: Check password from CONFIG (environment variable or default)
         if (password === CONFIG.CONTEST_PASSWORD) {
-            console.log('✓ Password correct, setting authenticated state');
             setUserAuthenticated();
             document.getElementById('passwordModal').classList.add('hidden');
             hideLoading();
             // Reload to show main content
             location.reload();
         } else {
-            console.warn('✗ Password mismatch!');
-            console.warn(`Expected: "${CONFIG.CONTEST_PASSWORD}"`);
-            console.warn(`Got: "${password}"`);
             errorDiv.textContent = 'Invalid password';
             errorDiv.style.display = 'block';
             document.getElementById('passwordInput').value = '';
         }
     } catch (error) {
-        console.error('Password validation error:', error);
         errorDiv.textContent = 'Error: ' + error.message;
         errorDiv.style.display = 'block';
     } finally {
@@ -232,19 +217,15 @@ async function loadProblems() {
                 if (response.ok) {
                     const problem = await response.json();
                     allProblems.push(problem);
-                    console.log(`✓ Loaded problem ${id}`);
                 }
             } catch (error) {
-                console.warn(`Could not load problem ${id}: ${error.message}`);
                 // Continue loading other problems even if one fails
             }
         }
         
         lastProblemsUpdateTime = Date.now();
-        console.log(`✓ Loaded ${allProblems.length} problems from local JSON files`);
         displayProblems(); // Display loaded problems
     } catch (error) {
-        console.error('Error loading problems:', error);
         showError('Failed to load problems.');
         hideLoading();
     }
@@ -255,7 +236,6 @@ function displayProblems() {
     // Get fresh reference to the tbody element
     const tbody = document.getElementById('problems-tbody');
     if (!tbody) {
-        console.error('Problems tbody not found');
         return;
     }
     
@@ -477,7 +457,6 @@ function setCurrentTab(tabName) {
 async function checkContestStatusOnce() {
     // ✅ STATIC: No backend - just display problems
     // No status checking needed
-    console.log('Static site - no contest status to check');
 }
 
 // Timer interval that checks for phase transitions
@@ -485,7 +464,6 @@ let phaseCheckInterval = null;
 
 function startPhaseCheckTimer() {
     // ✅ STATIC: No timer checking needed
-    console.log('Static site - no phase checking');
 }
 
 function stopPhaseCheckTimer() {
