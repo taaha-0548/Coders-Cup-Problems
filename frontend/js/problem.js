@@ -157,21 +157,19 @@ async function loadAllProblems() {
     }
 }
 
-// ✅ BATCH PRELOAD: Fetch all remaining problems at once after displaying first
+// ✅ BATCH PRELOAD: Fetch ALL available problems (A-G) at once after displaying first
 async function batchPreloadAllProblems(currentProblemId) {
     try {
-        // Get IDs of all problems except the current one
-        const remainingIds = allProblems
-            .filter(p => p.id !== currentProblemId && !problemCache[p.id])
-            .map(p => p.id);
+        // Get ALL problem IDs regardless of cache status
+        const allIds = allProblems.map(p => p.id);
         
-        if (remainingIds.length === 0) {
-            console.log('✓ All problems already cached');
+        if (allIds.length === 0) {
+            console.log('No problems to preload');
             return;
         }
         
-        const idsParam = remainingIds.join(',');
-        console.log(`🚀 Batch preloading ${remainingIds.length} problems: ${idsParam}`);
+        const idsParam = allIds.join(',');
+        console.log(`🚀 Batch preloading all ${allIds.length} problems: ${idsParam}`);
         
         const response = await fetch(`${API_URL}/problems/batch?ids=${idsParam}`);
         
@@ -187,7 +185,7 @@ async function batchPreloadAllProblems(currentProblemId) {
             console.log(`✓ Cached ${problem.id}`);
         });
         
-        console.log(`✅ All ${problems.length} problems preloaded and cached!`);
+        console.log(`✅ All ${problems.length} problems (A-G) preloaded and cached!`);
         
     } catch (error) {
         console.error('Batch preload error:', error);
